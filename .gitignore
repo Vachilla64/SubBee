@@ -1,0 +1,29 @@
+# ─── Dependencies ────────────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+
+# ─── Build outputs ────────────────────────────────────────────────────────────
+dist/
+build/
+out/
+
+# ─── Environment / secrets ────────────────────────────────────────────────────
+# NEVER commit .env files — they contain API keys and private keys
+.env
+.env.local
+.env.*.local
+
+# ─── Editor / OS ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/settings.json
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+pnpm-debug.log*
+
+# ─── TypeScript cache ─────────────────────────────────────────────────────────
+*.tsbuildinfo
