@@ -1,0 +1,26 @@
+# ─── Never bake secrets into the image ───────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── node_modules (Docker installs its own inside the image) ─────────────────
+node_modules/
+apps/*/node_modules/
+
+# ─── Build outputs (builder stage regenerates these) ─────────────────────────
+apps/*/dist/
+apps/*/build/
+
+# ─── Frontend (backend image doesn't need it) ────────────────────────────────
+apps/frontend/
+
+# ─── Git & editor ─────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.idea/
+.vscode/
+
+# ─── Logs & OS ────────────────────────────────────────────────────────────────
+*.log
+.DS_Store
+Thumbs.db

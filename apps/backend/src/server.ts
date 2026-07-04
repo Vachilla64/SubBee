@@ -9,14 +9,14 @@
  *  - Webhooks acknowledge 200 immediately; all heavy work is enqueued.
  */
 
-import 'dotenv/config';
-import express, { Application, Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import crypto from 'crypto';
+import "dotenv/config";
+import express, { Application, Request, Response, NextFunction } from "express";
+import cors from "cors";
+import crypto from "crypto";
 
 // ─── Environment ──────────────────────────────────────────────────────────────
 
-const PORT = parseInt(process.env.PORT ?? '3000', 10);
+const PORT = parseInt(process.env.PORT ?? "3000", 10);
 
 /**
  * NOMBA_WEBHOOK_SECRET is the "Signature Key" shown in the Nomba dashboard
@@ -24,10 +24,10 @@ const PORT = parseInt(process.env.PORT ?? '3000', 10);
  * client secret. Keep them separate in your .env.
  *
  * We fall back to a known test value so the skeleton boots in a bare
- * environment during local development — replace before any real usage.
+ * environment during local development.
  */
 const NOMBA_WEBHOOK_SECRET =
-  process.env.NOMBA_WEBHOOK_SECRET ?? 'hackathon_test_secret_123';
+  process.env.NOMBA_WEBHOOK_SECRET ?? "hackathon_test_secret_123";
 
 // ─── App factory ──────────────────────────────────────────────────────────────
 
@@ -48,12 +48,12 @@ app.use(cors());
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 
-app.get('/', (_req: Request, res: Response) => {
+app.get("/", (_req: Request, res: Response) => {
   res.json({
-    status: 'ok',
-    service: 'SubBee API',
-    version: '0.1.0',
-    milestone: 'M0 — skeleton',
+    status: "ok",
+    service: "SubBee API",
+    version: "0.1.0",
+    milestone: "M0 — skeleton",
     timestamp: new Date().toISOString(),
   });
 });
@@ -73,18 +73,17 @@ app.get('/', (_req: Request, res: Response) => {
 //  4. Enqueue processing job        → (TODO: BullMQ worker)
 
 app.post(
-  '/webhooks/nomba',
-  express.raw({ type: 'application/json' }),
+  "/webhooks/nomba",
+  express.raw({ type: "application/json" }),
   (req: Request, res: Response) => {
     // ── Step 1: signature verification ────────────────────────────────────────
 
-    const incomingSignature = req.headers['x-nomba-signature'] as
-      | string
-      | undefined;
+    const incomingSignature = req.headers["x-nomba-signature"] as
+      string | undefined;
 
     if (!incomingSignature) {
-      console.warn('[webhook/nomba] Missing x-nomba-signature header — 401');
-      res.status(401).json({ error: 'Missing signature header' });
+      console.warn("[webhook/nomba] Missing x-nomba-signature header — 401");
+      res.status(401).json({ error: "Missing signature header" });
       return;
     }
 
@@ -93,16 +92,16 @@ app.post(
 
     // Compute HMAC-SHA512 over the *raw byte buffer* using our secret key
     const computedHmac = crypto
-      .createHmac('sha512', NOMBA_WEBHOOK_SECRET)
+      .createHmac("sha512", NOMBA_WEBHOOK_SECRET)
       .update(rawBody)
-      .digest('hex');
+      .digest("hex");
 
     // timingSafeEqual prevents timing attacks — both buffers must be the same
     // length before comparison, otherwise it throws
     let isValid = false;
     try {
-      const sigBuffer = Buffer.from(incomingSignature, 'hex');
-      const computedBuffer = Buffer.from(computedHmac, 'hex');
+      const sigBuffer = Buffer.from(incomingSignature, "hex");
+      const computedBuffer = Buffer.from(computedHmac, "hex");
       // Buffers must be the same byte-length for timingSafeEqual
       isValid =
         sigBuffer.length === computedBuffer.length &&
@@ -113,8 +112,8 @@ app.post(
     }
 
     if (!isValid) {
-      console.warn('[webhook/nomba] Invalid HMAC signature — 401');
-      res.status(401).json({ error: 'Invalid signature' });
+      console.warn("[webhook/nomba] Invalid HMAC signature — 401");
+      res.status(401).json({ error: "Invalid signature" });
       return;
     }
 
@@ -122,13 +121,13 @@ app.post(
 
     let payload: Record<string, unknown>;
     try {
-      payload = JSON.parse(rawBody.toString('utf-8')) as Record<
+      payload = JSON.parse(rawBody.toString("utf-8")) as Record<
         string,
         unknown
       >;
     } catch {
-      console.error('[webhook/nomba] Non-JSON payload after valid signature');
-      res.status(400).json({ error: 'Invalid JSON payload' });
+      console.error("[webhook/nomba] Non-JSON payload after valid signature");
+      res.status(400).json({ error: "Invalid JSON payload" });
       return;
     }
 
@@ -141,18 +140,17 @@ app.post(
      *
      * TODO (M1): Replace this log with the actual DB insert + queue enqueue.
      */
-    const data = payload['data'] as Record<string, unknown> | undefined;
-    const transaction = data?.['transaction'] as
-      | Record<string, unknown>
-      | undefined;
+    const data = payload["data"] as Record<string, unknown> | undefined;
+    const transaction = data?.["transaction"] as
+      Record<string, unknown> | undefined;
     const eventId =
-      (transaction?.['transactionId'] as string | undefined) ??
-      (payload['requestId'] as string | undefined) ??
-      'unknown';
+      (transaction?.["transactionId"] as string | undefined) ??
+      (payload["requestId"] as string | undefined) ??
+      "unknown";
 
-    const eventType = (payload['eventType'] as string | undefined) ?? 'unknown';
+    const eventType = (payload["eventType"] as string | undefined) ?? "unknown";
 
-    console.log('[webhook/nomba] ✅ Valid webhook received', {
+    console.log("[webhook/nomba] ✅ Valid webhook received", {
       eventType,
       eventId,
       timestamp: new Date().toISOString(),
@@ -172,8 +170,8 @@ app.post(
 // ─── Bridgecard webhook receiver (skeleton — implementation in M2) ────────────
 
 app.post(
-  '/webhooks/bridgecard',
-  express.raw({ type: 'application/json' }),
+  "/webhooks/bridgecard",
+  express.raw({ type: "application/json" }),
   (req: Request, res: Response) => {
     /**
      * TODO (M2): Verify Bridgecard's webhook authentication scheme
@@ -185,15 +183,17 @@ app.post(
     const rawBody = req.body as Buffer;
     let payload: Record<string, unknown> = {};
     try {
-      payload = JSON.parse(rawBody.toString('utf-8')) as Record<string, unknown>;
+      payload = JSON.parse(rawBody.toString("utf-8")) as Record<
+        string,
+        unknown
+      >;
     } catch {
-      res.status(400).json({ error: 'Invalid JSON payload' });
+      res.status(400).json({ error: "Invalid JSON payload" });
       return;
     }
 
-    const eventType =
-      (payload['event'] as string | undefined) ?? 'unknown';
-    console.log('[webhook/bridgecard] 🔲 Skeleton received (auth TODO)', {
+    const eventType = (payload["event"] as string | undefined) ?? "unknown";
+    console.log("[webhook/bridgecard] 🔲 Skeleton received (auth TODO)", {
       eventType,
       timestamp: new Date().toISOString(),
     });
@@ -212,15 +212,15 @@ app.use(express.json());
 // ─── 404 fallback ─────────────────────────────────────────────────────────────
 
 app.use((_req: Request, res: Response) => {
-  res.status(404).json({ error: 'Not found' });
+  res.status(404).json({ error: "Not found" });
 });
 
 // ─── Global error handler ────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('[server] Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  console.error("[server] Unhandled error:", err);
+  res.status(500).json({ error: "Internal server error" });
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
