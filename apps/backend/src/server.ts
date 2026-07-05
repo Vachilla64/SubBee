@@ -27,7 +27,7 @@ const PORT = parseInt(process.env.PORT ?? "3000", 10);
  * environment during local development.
  */
 const NOMBA_WEBHOOK_SECRET =
-  process.env.NOMBA_WEBHOOK_SECRET ?? "hackathon_test_secret_123";
+  process.env.NOMBA_WEBHOOK_SECRET ?? "NombaHackathon2026";
 
 // ─── App factory ──────────────────────────────────────────────────────────────
 
@@ -76,13 +76,11 @@ app.post(
   "/webhooks/nomba",
   express.raw({ type: "application/json" }),
   (req: Request, res: Response) => {
-    // ── Step 1: signature verification ────────────────────────────────────────
-
-    const incomingSignature = req.headers["x-nomba-signature"] as
-      string | undefined;
+    const incomingSignature = (req.headers["nomba-signature"] ??
+      req.headers["x-nomba-signature"]) as string | undefined;
 
     if (!incomingSignature) {
-      console.warn("[webhook/nomba] Missing x-nomba-signature header — 401");
+      console.warn("[webhook/nomba] Missing nomba-signature or x-nomba-signature header — 401");
       res.status(401).json({ error: "Missing signature header" });
       return;
     }
