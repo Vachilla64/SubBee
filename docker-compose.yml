@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for double-entry ledger (ACID compliant)
+  # Uses alpine image to keep system resource usage low.
+  postgres:
+    image: postgres:16-alpine
+    container_name: subbee-postgres
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: subbee
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Redis for BullMQ jobs queue and scheduler
+  # Uses alpine image to keep RAM usage low.
+  redis:
+    image: redis:7-alpine
+    container_name: subbee-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

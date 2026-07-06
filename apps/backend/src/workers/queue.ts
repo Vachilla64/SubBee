@@ -1,0 +1,27 @@
+import { Queue, ConnectionOptions } from 'bullmq';
+import { config } from '../config';
+
+// Define the standard Redis connection options for all queues and workers
+export const redisConnection: ConnectionOptions = {
+  // Parse connection URL or connection details from config
+  url: config.REDIS_URL,
+  // Prevent infinite reconnect loops hanging processes during shutdowns
+  maxRetriesPerRequest: null,
+};
+
+// Initialize the Nomba deposit queue
+export const depositQueue = new Queue('deposit-queue', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    // Retry failed jobs 3 times with exponential backoff
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+    removeOnComplete: true, // Keep Redis memory footprint small
+    removeOnFail: 100, // Keep last 100 failed traces for inspection
+  },
+});
+
+console.log('[queue] Deposit queue initialized.');

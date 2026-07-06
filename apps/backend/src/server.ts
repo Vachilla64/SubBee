@@ -1,168 +1,122 @@
 /**
- * SubBee Backend — Express server (M0 skeleton)
- *
- * Architecture notes (from implementation blueprint):
- *  - Webhook routes use express.raw() BEFORE express.json() so the HMAC is
- *    computed over the original byte stream. Re-serialising parsed JSON can
- *    reorder keys / change whitespace and break the signature comparison.
- *  - crypto.timingSafeEqual prevents timing attacks on the HMAC comparison.
- *  - Webhooks acknowledge 200 immediately; all heavy work is enqueued.
+ * SubBee Backend — Express server (M1 deposits)
  */
 
-import "dotenv/config";
-import express, { Application, Request, Response, NextFunction } from "express";
-import cors from "cors";
-import crypto from "crypto";
+import { config } from './config';
+import express, { Application, Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import crypto from 'crypto';
+import { db } from './db';
+import { depositQueue } from './workers/queue';
 
-// ─── Environment ──────────────────────────────────────────────────────────────
+// Import workers to ensure they register and start listening to Redis
+import './workers/deposit.worker';
+import './telegram/bot';
 
-const PORT = parseInt(process.env.PORT ?? "3000", 10);
-
-/**
- * NOMBA_WEBHOOK_SECRET is the "Signature Key" shown in the Nomba dashboard
- * when configuring a webhook endpoint. It is the HMAC key, not the OAuth
- * client secret. Keep them separate in your .env.
- *
- * We fall back to a known test value so the skeleton boots in a bare
- * environment during local development.
- */
-const NOMBA_WEBHOOK_SECRET =
-  process.env.NOMBA_WEBHOOK_SECRET ?? "NombaHackathon2026";
-
-// ─── App factory ──────────────────────────────────────────────────────────────
+const PORT = config.PORT;
+const NOMBA_WEBHOOK_SECRET = config.NOMBA_WEBHOOK_SECRET;
 
 const app: Application = express();
 
-// ─── Global middleware ────────────────────────────────────────────────────────
-
 app.use(cors());
 
-/**
- * express.json() is the default body parser for all non-webhook routes.
- * We mount it AFTER the webhook router so the raw-body middleware on
- * /webhooks/* takes precedence on those paths.
- *
- * Order matters: Express matches middleware in registration order.
- */
-// (mounted after webhook routes — see below)
-
-// ─── Health check ─────────────────────────────────────────────────────────────
-
-app.get("/", (_req: Request, res: Response) => {
+// Health check
+app.get('/', (_req: Request, res: Response) => {
   res.json({
-    status: "ok",
-    service: "SubBee API",
-    version: "0.1.0",
-    milestone: "M0 — skeleton",
+    status: 'ok',
+    service: 'SubBee API',
+    version: '0.2.0',
+    milestone: 'M1 — deposits',
     timestamp: new Date().toISOString(),
   });
 });
 
-// ─── Nomba webhook receiver ───────────────────────────────────────────────────
-//
-// CRITICAL: express.raw() is mounted on this single route, NOT globally.
-// This means req.body is a Buffer here, giving us the original bytes for HMAC.
-//
-// Nomba signs with HMAC-SHA512. The signature header name is "x-nomba-signature"
-// — verify this against the live dashboard during integration (Section 7.1).
-//
-// Flow:
-//  1. Verify HMAC (raw bytes)       → 401 on failure
-//  2. Idempotency guard             → 200 early-return on duplicate (TODO: DB)
-//  3. Acknowledge 200 immediately
-//  4. Enqueue processing job        → (TODO: BullMQ worker)
-
 app.post(
-  "/webhooks/nomba",
-  express.raw({ type: "application/json" }),
-  (req: Request, res: Response) => {
-    const incomingSignature = (req.headers["nomba-signature"] ??
-      req.headers["x-nomba-signature"]) as string | undefined;
+  '/webhooks/nomba',
+  express.raw({ type: 'application/json' }),
+  async (req: Request, res: Response) => {
+    // ── Step 1: signature verification ────────────────────────────────────────
+    const incomingSignature = (req.headers['nomba-signature'] ??
+      req.headers['x-nomba-signature']) as string | undefined;
 
     if (!incomingSignature) {
-      console.warn("[webhook/nomba] Missing nomba-signature or x-nomba-signature header — 401");
-      res.status(401).json({ error: "Missing signature header" });
+      console.warn('[webhook/nomba] Missing signature header — 401');
+      res.status(401).json({ error: 'Missing signature header' });
       return;
     }
 
-    // req.body is a Buffer because of express.raw() above
     const rawBody = req.body as Buffer;
-
-    // Compute HMAC-SHA512 over the *raw byte buffer* using our secret key
     const computedHmac = crypto
-      .createHmac("sha512", NOMBA_WEBHOOK_SECRET)
+      .createHmac('sha512', NOMBA_WEBHOOK_SECRET)
       .update(rawBody)
-      .digest("hex");
+      .digest('hex');
 
-    // timingSafeEqual prevents timing attacks — both buffers must be the same
-    // length before comparison, otherwise it throws
     let isValid = false;
     try {
-      const sigBuffer = Buffer.from(incomingSignature, "hex");
-      const computedBuffer = Buffer.from(computedHmac, "hex");
-      // Buffers must be the same byte-length for timingSafeEqual
+      const sigBuffer = Buffer.from(incomingSignature, 'hex');
+      const computedBuffer = Buffer.from(computedHmac, 'hex');
       isValid =
         sigBuffer.length === computedBuffer.length &&
         crypto.timingSafeEqual(sigBuffer, computedBuffer);
     } catch {
-      // Malformed hex in the incoming signature — treat as invalid
       isValid = false;
     }
 
     if (!isValid) {
-      console.warn("[webhook/nomba] Invalid HMAC signature — 401");
-      res.status(401).json({ error: "Invalid signature" });
+      console.warn('[webhook/nomba] Invalid HMAC signature — 401');
+      res.status(401).json({ error: 'Invalid signature' });
       return;
     }
 
-    // ── Step 2: Parse payload (safe now that signature is verified) ───────────
-
-    let payload: Record<string, unknown>;
+    // ── Step 2: Parse payload ─────────────────────────────────────────────────
+    let payload: any;
     try {
-      payload = JSON.parse(rawBody.toString("utf-8")) as Record<
-        string,
-        unknown
-      >;
+      payload = JSON.parse(rawBody.toString('utf-8'));
     } catch {
-      console.error("[webhook/nomba] Non-JSON payload after valid signature");
-      res.status(400).json({ error: "Invalid JSON payload" });
+      res.status(400).json({ error: 'Invalid JSON payload' });
       return;
     }
 
-    /**
-     * Idempotency key:
-     *   Use Nomba's transactionId as the stable event ID — it remains constant
-     *   across redelivery attempts. Fall back to requestId if not present.
-     *   The DB layer will enforce UNIQUE(provider, event_id) with ON CONFLICT
-     *   DO NOTHING (see Section 5.2 data model: webhook_events table).
-     *
-     * TODO (M1): Replace this log with the actual DB insert + queue enqueue.
-     */
-    const data = payload["data"] as Record<string, unknown> | undefined;
-    const transaction = data?.["transaction"] as
-      Record<string, unknown> | undefined;
+    const data = payload['data'];
+    const transaction = data?.['transaction'];
     const eventId =
-      (transaction?.["transactionId"] as string | undefined) ??
-      (payload["requestId"] as string | undefined) ??
-      "unknown";
+      transaction?.['transactionId'] ??
+      payload['requestId'] ??
+      'unknown';
+    const eventType = payload['eventType'] ?? 'unknown';
 
-    const eventType = (payload["eventType"] as string | undefined) ?? "unknown";
+    try {
+      // ── Step 3: Idempotency check via DB Unique Constraint ───────────────────
+      // Saves the event first; does nothing if we already received it.
+      const dbInsert = await db.query(
+        `INSERT INTO webhook_events (provider, event_id, event_type, raw_payload) 
+         VALUES ($1, $2, $3, $4) 
+         ON CONFLICT (provider, event_id) DO NOTHING`,
+        ['nomba', eventId, eventType, JSON.stringify(payload)]
+      );
 
-    console.log("[webhook/nomba] ✅ Valid webhook received", {
-      eventType,
-      eventId,
-      timestamp: new Date().toISOString(),
-    });
+      if (dbInsert.rowCount === 0) {
+        console.log(`[webhook/nomba] Duplicate event ignored: ${eventId}`);
+        res.status(200).json({ received: true, duplicate: true });
+        return;
+      }
 
-    // ── Step 3: Acknowledge immediately (before any slow work) ────────────────
-    //
-    // Slow handlers cause Nomba to retry, which causes more duplicates.
-    // The 200 goes out here; the BullMQ worker does the ledger update.
-    res.status(200).json({ received: true });
+      // ── Step 4: Enqueue job to BullMQ ────────────────────────────────────────
+      await depositQueue.add('process-deposit', {
+        eventId,
+        eventType,
+        payload,
+      });
 
-    // ── Step 4: Enqueue (TODO M1 — BullMQ queue.add) ─────────────────────────
-    // depositQueue.add('process-deposit', { eventId, eventType, payload });
-  },
+      console.log('[webhook/nomba] Webhook enqueued successfully', { eventId, eventType });
+
+      // ── Step 5: Acknowledge Nomba immediately ──────────────────────────────
+      res.status(200).json({ received: true });
+    } catch (error: any) {
+      console.error('[webhook/nomba] Error handling webhook:', error);
+      res.status(500).json({ error: 'Internal processing failure' });
+    }
+  }
 );
 
 // ─── Bridgecard webhook receiver (skeleton — implementation in M2) ────────────
