@@ -2,6 +2,8 @@ import { Bot } from 'grammy';
 import { config } from '../config';
 import { db } from '../db';
 import { createNombaVirtualAccount } from '../services/nomba/accounts';
+import { bridgecard } from '../services/bridgecard/client';
+import crypto from 'crypto';
 
 if (!config.TELEGRAM_BOT_TOKEN) {
   throw new Error('[telegram/bot] TELEGRAM_BOT_TOKEN must be configured at startup.');
@@ -11,14 +13,41 @@ if (!config.TELEGRAM_BOT_TOKEN) {
 export const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
 /**
- * Onboard user and generate virtual account numbers
+ * Start handler supporting deep-link profile connection
  */
 bot.command('start', async (ctx) => {
   const telegramChatId = String(ctx.chat.id);
   const username = ctx.from?.username ?? '';
   const firstName = ctx.from?.first_name ?? 'SubBee User';
+  const startParam = ctx.match; // Deep link connection param (e.g. conn_USER_UUID)
 
   try {
+    // ── Deep Linking Connection Flow ─────────────────────────────────────────
+    if (startParam && startParam.startsWith('conn_')) {
+      const userId = startParam.replace('conn_', '');
+
+      // Check if user exists by UUID
+      const userRes = await db.query('SELECT id, email FROM users WHERE id = $1', [userId]);
+      if (userRes.rows.length > 0) {
+        // Unlink Telegram Chat ID from any previous profile to avoid UNIQUE constraint violations
+        await db.query('UPDATE users SET telegram_chat_id = NULL WHERE telegram_chat_id = $1', [telegramChatId]);
+        
+        // Link Telegram Chat ID to the existing web profile
+        await db.query(
+          'UPDATE users SET telegram_chat_id = $1 WHERE id = $2',
+          [telegramChatId, userId]
+        );
+        await ctx.reply(
+          `✅ *Telegram Connected!*\n\n` +
+          `Your Telegram account has been linked to your SubBee wallet profile (*${userRes.rows[0].email}*).\n\n` +
+          `You will now receive real-time notifications for deposits, virtual card funding, and billing renewals here.`,
+          { parse_mode: 'Markdown' }
+        );
+        return;
+      }
+    }
+
+    // ── Standard Onboarding Flow ──────────────────────────────────────────────
     await ctx.reply('🐝 *Welcome to SubBee!* Please wait while we set up your subscription wallet...', {
       parse_mode: 'Markdown',
     });
@@ -34,6 +63,20 @@ bot.command('start', async (ctx) => {
         [telegramChatId, 'none']
       );
       userId = insertResult.rows[0].id;
+
+      // Initialize ledger accounts
+      await db.query(
+        "INSERT INTO ledger_accounts (user_id, type, currency, current_balance) VALUES ($1, 'wallet', 'NGN', 0)",
+        [userId]
+      );
+      await db.query(
+        "INSERT INTO ledger_accounts (user_id, type, currency, current_balance) VALUES ($1, 'card', 'NGN', 0)",
+        [userId]
+      );
+      await db.query(
+        "INSERT INTO ledger_accounts (user_id, type, currency, current_balance) VALUES ($1, 'card_pending', 'NGN', 0)",
+        [userId]
+      );
     } else {
       userId = userResult.rows[0].id;
     }
@@ -45,14 +88,12 @@ bot.command('start', async (ctx) => {
     let bankName: string;
 
     if (accountResult.rowCount === 0) {
-      // Create static account via Nomba API
       const accountName = `SubBee - ${username || firstName}`;
       const nombaAccount = await createNombaVirtualAccount({
         accountRef: userId,
         accountName,
       });
 
-      // Save static account in database
       await db.query(
         'INSERT INTO virtual_accounts (user_id, account_ref, bank_account_number, bank_name) VALUES ($1, $2, $3, $4)',
         [userId, userId, nombaAccount.bankAccountNumber, nombaAccount.bankName]
@@ -65,7 +106,6 @@ bot.command('start', async (ctx) => {
       bankName = accountResult.rows[0].bank_name;
     }
 
-    // 3. Output Onboarding Message
     await ctx.reply(
       `🎉 *Account setup complete!*\n\n` +
       `Here is your permanent virtual bank account number to fund your SubBee balance:\n\n` +
@@ -88,7 +128,6 @@ bot.command('balance', async (ctx) => {
   const telegramChatId = String(ctx.chat.id);
 
   try {
-    // 1. Get user record
     const userResult = await db.query('SELECT id FROM users WHERE telegram_chat_id = $1', [telegramChatId]);
     if (userResult.rows.length === 0) {
       await ctx.reply('⚠️ You do not have a SubBee account yet. Run /start to set one up!');
@@ -96,21 +135,180 @@ bot.command('balance', async (ctx) => {
     }
     const userId = userResult.rows[0].id;
 
-    // 2. Query ledger balance cache
+    // Fetch wallet balance
     const walletResult = await db.query(
-      'SELECT current_balance FROM ledger_accounts WHERE user_id = $1 AND type = $2',
-      [userId, 'wallet']
+      "SELECT current_balance FROM ledger_accounts WHERE user_id = $1 AND type = 'wallet'",
+      [userId]
+    );
+
+    // Fetch card balance
+    const cardResult = await db.query(
+      "SELECT current_balance FROM ledger_accounts WHERE user_id = $1 AND type = 'card'",
+      [userId]
     );
 
     const balanceKobo = walletResult.rows.length > 0 ? BigInt(walletResult.rows[0].current_balance) : 0n;
-    const balanceNaira = (Number(balanceKobo) / 100).toFixed(2);
+    const cardKobo = cardResult.rows.length > 0 ? BigInt(cardResult.rows[0].current_balance) : 0n;
 
-    await ctx.reply(`🐝 *Your SubBee Wallet Balance:*\n\n*Naira:* ₦${balanceNaira}`, {
-      parse_mode: 'Markdown',
-    });
+    const balanceNaira = (Number(balanceKobo) / 100).toFixed(2);
+    const cardNaira = (Number(cardKobo) / 100).toFixed(2);
+
+    await ctx.reply(
+      `🐝 *SubBee Balance Overview:*\n\n` +
+      `💳 *Wallet Balance:* ₦${balanceNaira}\n` +
+      `🛍️ *Virtual Card Balance:* ₦${cardNaira}`,
+      { parse_mode: 'Markdown' }
+    );
   } catch (error) {
     console.error('[telegram/bot] Balance query error:', error);
     await ctx.reply('⚠️ Error fetching wallet balance. Please try again.');
+  }
+});
+
+/**
+ * Display or lazy-issue virtual card details
+ */
+bot.command('card', async (ctx) => {
+  const telegramChatId = String(ctx.chat.id);
+
+  try {
+    // 1. Resolve user
+    const userRes = await db.query('SELECT id, kyc_status FROM users WHERE telegram_chat_id = $1', [telegramChatId]);
+    if (userRes.rowCount === 0) {
+      await ctx.reply('⚠️ You do not have a SubBee account yet. Run /start to set one up!');
+      return;
+    }
+    const user = userRes.rows[0];
+
+    // 2. Enforce KYC onboarding on frontend
+    if (user.kyc_status !== 'verified') {
+      await ctx.reply(
+        `👤 *KYC Verification Required!*\n\n` +
+        `Bridgecard requires KYC documentation to issue virtual cards.\n\n` +
+        `Please log in to the SubBee Web Dashboard at http://localhost:5173 to complete your verification wizard.`,
+        { parse_mode: 'Markdown' }
+      );
+      return;
+    }
+
+    // 3. Fetch cardholder and card details
+    const chRes = await db.query('SELECT id, bridgecard_cardholder_id FROM cardholders WHERE user_id = $1', [user.id]);
+    const cardholder = chRes.rows[0];
+
+    let cardRes = await db.query('SELECT * FROM cards WHERE user_id = $1', [user.id]);
+    let card: any;
+
+    if (cardRes.rowCount === 0) {
+      // Lazy-issue card via Bridgecard API client
+      await ctx.reply('⏳ Creating your virtual Naira MasterCard...');
+      const cardData = await bridgecard.createVirtualCard(cardholder.bridgecard_cardholder_id);
+
+      const insertRes = await db.query(
+        'INSERT INTO cards (user_id, cardholder_id, bridgecard_card_id, last4, brand, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [user.id, cardholder.id, cardData.cardId, cardData.last4, cardData.brand, cardData.status]
+      );
+      card = insertRes.rows[0];
+    } else {
+      card = cardRes.rows[0];
+    }
+
+    // Get current card balance from ledger
+    const balanceRes = await db.query(
+      "SELECT current_balance FROM ledger_accounts WHERE user_id = $1 AND type = 'card'",
+      [user.id]
+    );
+    const balanceNaira = (Number(balanceRes.rows[0]?.current_balance ?? 0) / 100).toFixed(2);
+
+    await ctx.reply(
+      `💳 *Your SubBee Virtual Card:*\n\n` +
+      `• *Brand:* ${card.brand.toUpperCase()}\n` +
+      `• *Number:* \`•••• •••• •••• ${card.last4}\`\n` +
+      `• *Status:* ${card.status.toUpperCase()}\n` +
+      `• *Card Balance:* ₦${balanceNaira}\n\n` +
+      `💡 *To fund this card:* Send \`/fund_card <amount>\` (e.g. \`/fund_card 2500\`) to move money from your SubBee wallet balance to your card.`,
+      { parse_mode: 'Markdown' }
+    );
+  } catch (error: any) {
+    console.error('[telegram/bot] Card command error:', error);
+    await ctx.reply('⚠️ Error loading virtual card. Please try again.');
+  }
+});
+
+/**
+ * Initiate virtual card funding
+ */
+bot.command('fund_card', async (ctx) => {
+  const telegramChatId = String(ctx.chat.id);
+  const amountParam = ctx.match?.trim();
+
+  if (!amountParam) {
+    await ctx.reply('💡 *Usage:* `/fund_card <amount>` (e.g. `/fund_card 5000`)', { parse_mode: 'Markdown' });
+    return;
+  }
+
+  const amountNaira = parseFloat(amountParam);
+  if (isNaN(amountNaira) || amountNaira <= 0) {
+    await ctx.reply('⚠️ Please provide a valid positive transfer amount.');
+    return;
+  }
+
+  const amountKobo = Math.round(amountNaira * 100);
+
+  try {
+    // 1. Resolve user
+    const userRes = await db.query('SELECT id FROM users WHERE telegram_chat_id = $1', [telegramChatId]);
+    if (userRes.rowCount === 0) {
+      await ctx.reply('⚠️ You do not have a SubBee account yet. Run /start to set one up!');
+      return;
+    }
+    const user = userRes.rows[0];
+
+    // 2. Resolve virtual card
+    const cardRes = await db.query('SELECT id, bridgecard_card_id FROM cards WHERE user_id = $1', [user.id]);
+    if (cardRes.rowCount === 0) {
+      await ctx.reply('⚠️ You do not have an active virtual card yet. Run /card to issue one.');
+      return;
+    }
+    const card = cardRes.rows[0];
+
+    // 3. Enforce balance checks before enqueuing Bridgecard fund transfer
+    const walletRes = await db.query(
+      "SELECT current_balance FROM ledger_accounts WHERE user_id = $1 AND type = 'wallet'",
+      [user.id]
+    );
+    const balanceKobo = BigInt(walletRes.rows[0]?.current_balance ?? 0);
+
+    if (balanceKobo < BigInt(amountKobo)) {
+      const balanceNairaFormatted = (Number(balanceKobo) / 100).toFixed(2);
+      await ctx.reply(
+        `❌ *Insufficient Balance!*\n\n` +
+        `Your SubBee wallet balance (₦${balanceNairaFormatted}) is not enough to fund ₦${amountNaira.toFixed(2)}.\n\n` +
+        `Please top up your wallet by transfering funds to your virtual account numbers first.`,
+        { parse_mode: 'Markdown' }
+      );
+      return;
+    }
+
+    // 4. Create pending transfer record
+    const reference = `tf_${crypto.randomBytes(8).toString('hex')}`;
+    await db.query(
+      `INSERT INTO pending_transfers (user_id, card_id, amount_kobo, reference, status) 
+       VALUES ($1, $2, $3, $4, 'pending')`,
+      [user.id, card.id, amountKobo, reference]
+    );
+
+    // 5. Trigger Bridgecard API call (asynchronously settled via webhook)
+    await bridgecard.fundCard(card.bridgecard_card_id, amountKobo, reference);
+
+    await ctx.reply(
+      `⏳ *Funding Request Sent!*\n\n` +
+      `We have queued a transfer of ₦${amountNaira.toFixed(2)} to your virtual card.\n` +
+      `Your card balance will be updated automatically once settled by the network in a few seconds.`,
+      { parse_mode: 'Markdown' }
+    );
+  } catch (error: any) {
+    console.error('[telegram/bot] Fund card error:', error);
+    await ctx.reply('⚠️ Sorry, there was an error processing your card funding request. Please try again.');
   }
 });
 

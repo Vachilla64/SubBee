@@ -25,3 +25,20 @@ export const depositQueue = new Queue('deposit-queue', {
 });
 
 console.log('[queue] Deposit queue initialized.');
+
+// Initialize the Bridgecard cards webhook queue
+export const cardQueue = new Queue('card-queue', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+    removeOnComplete: true,
+    removeOnFail: 100,
+  },
+});
+
+console.log('[queue] Card queue initialized.');
+
