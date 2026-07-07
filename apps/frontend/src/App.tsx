@@ -37,11 +37,12 @@ interface KYCData {
   postalCode: string;
   bvn: string;
   selfieUrl: string;
+  pin: string;
 }
 
 export default function App() {
   // --- Authentication State ---
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string; id?: string; kycStatus?: string } | null>(null);
   const [authEmail, setAuthEmail] = useState('');
   const [authName, setAuthName] = useState('');
 
@@ -67,7 +68,8 @@ export default function App() {
     lga: '',
     postalCode: '',
     bvn: '',
-    selfieUrl: ''
+    selfieUrl: '',
+    pin: '1234'
   });
 
   // --- Virtual Card State ---
@@ -91,6 +93,10 @@ export default function App() {
       setBalanceKobo(balData.balanceKobo || 0);
       setTelegramConnected(balData.telegramConnected || false);
       if (balData.telegramBotUsername) setTelegramBotUsername(balData.telegramBotUsername);
+      if (balData.kycStatus) {
+        setUser(prev => prev ? { ...prev, kycStatus: balData.kycStatus } : null);
+        if (balData.kycStatus !== 'none') setKycSubmitted(true);
+      }
 
       const depData = await api.getDepositInfo(email);
       if (depData && depData.accountNumber) setDepositInfo(depData);
@@ -119,6 +125,15 @@ export default function App() {
       loadUserData(parsed.email);
     }
   }, []);
+
+  // Poll for live data every 5 seconds if a user is logged in
+  // useEffect(() => {
+  //   if (!user?.email) return;
+  //   const intervalId = setInterval(() => {
+  //     loadUserData(user.email);
+  //   }, 5000);
+  //   return () => clearInterval(intervalId);
+  // }, [user?.email]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,13 +170,16 @@ export default function App() {
     if (!user) return;
     try {
       await api.submitKyc(user.email, kycForm);
+      setUser(prev => prev ? { ...prev, kycStatus: 'verified' } : null);
       setKycSubmitted(true);
-      
-      const cardData = await api.requestCard(user.email);
-      if (cardData.card && cardData.card.status) {
-        setCardStatus(cardData.card.status);
-      }
-      setActiveTab('card');
+      // Wait for 1 second, then request the virtual card
+      setTimeout(async () => {
+        const cardData = await api.requestCard(user.email, kycForm.pin);
+        if (cardData.card && cardData.card.status) {
+          setCardStatus(cardData.card.status);
+        }
+        setActiveTab('card');
+      }, 1000);
     } catch (e) {
       console.error('KYC error:', e);
     }
@@ -453,11 +471,19 @@ export default function App() {
               <p className="text-sm text-white/50">Required by Bridgecard for card issuing</p>
             </div>
 
-            {kycSubmitted ? (
+            {kycSubmitted || user?.kycStatus === 'verified' || user?.kycStatus === 'pending' || user?.kycStatus === 'failed' ? (
               <div className="glass-card p-8 text-center max-w-md mx-auto">
-                <span className="text-5xl block mb-4">✅</span>
-                <h3 className="text-xl font-bold mb-1">Verification Complete</h3>
-                <p className="text-sm text-white/50 mb-6">Your details have been registered. Your virtual card is active.</p>
+                <span className="text-5xl block mb-4">
+                  {user?.kycStatus === 'verified' ? '✅' : user?.kycStatus === 'failed' ? '❌' : '⏳'}
+                </span>
+                <h3 className="text-xl font-bold mb-1">
+                  {user?.kycStatus === 'verified' ? 'Verification Complete' : user?.kycStatus === 'failed' ? 'Verification Failed' : 'Verification Pending'}
+                </h3>
+                <p className="text-sm text-white/50 mb-6">
+                  {user?.kycStatus === 'verified' ? 'Your details have been registered. Your virtual card is active.' :
+                   user?.kycStatus === 'failed' ? 'There was an issue verifying your details. Please try again.' :
+                   'Your details are being reviewed by Bridgecard.'}
+                </p>
                 <button
                   onClick={() => {
                     setKycSubmitted(false);
@@ -465,7 +491,7 @@ export default function App() {
                   }}
                   className="bg-white/5 hover:bg-white/10 text-white border border-white/10 px-4 py-2 rounded-xl text-xs font-bold transition-all"
                 >
-                  Edit Verification Details
+                  {user?.kycStatus === 'verified' ? 'Edit Verification Details' : 'Retry Verification'}
                 </button>
               </div>
             ) : (
@@ -486,6 +512,7 @@ export default function App() {
                           <input
                             type="text"
                             required
+                            autoComplete="given-name"
                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-brand-500"
                             value={kycForm.firstName}
                             onChange={e => setKycForm({ ...kycForm, firstName: e.target.value })}
@@ -496,6 +523,7 @@ export default function App() {
                           <input
                             type="text"
                             required
+                            autoComplete="family-name"
                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-brand-500"
                             value={kycForm.lastName}
                             onChange={e => setKycForm({ ...kycForm, lastName: e.target.value })}
@@ -508,6 +536,7 @@ export default function App() {
                           <input
                             type="tel"
                             required
+                            autoComplete="tel"
                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-brand-500"
                             value={kycForm.phone}
                             onChange={e => setKycForm({ ...kycForm, phone: e.target.value })}
@@ -518,6 +547,7 @@ export default function App() {
                           <input
                             type="email"
                             required
+                            autoComplete="email"
                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-brand-500"
                             value={kycForm.email}
                             onChange={e => setKycForm({ ...kycForm, email: e.target.value })}
@@ -529,6 +559,7 @@ export default function App() {
                         <input
                           type="date"
                           required
+                          autoComplete="bday"
                           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-brand-500"
                           value={kycForm.dob}
                           onChange={e => setKycForm({ ...kycForm, dob: e.target.value })}
@@ -553,6 +584,7 @@ export default function App() {
                         <input
                           type="text"
                           required
+                          autoComplete="street-address"
                           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-brand-500"
                           value={kycForm.address}
                           onChange={e => setKycForm({ ...kycForm, address: e.target.value })}
@@ -625,6 +657,22 @@ export default function App() {
                           value={kycForm.bvn}
                           onChange={e => setKycForm({ ...kycForm, bvn: e.target.value })}
                         />
+
+                        <div className="pt-2 border-t border-white/5 mt-4">
+                          <label className="block text-xs font-bold text-white/50 mb-2">Virtual Card PIN (Default: 1234)</label>
+                          <p className="text-[10px] text-white/40 mb-2 leading-tight">This 4-digit PIN is rarely used for online subscriptions, but you can customize it here if you wish.</p>
+                          <input
+                            type="text"
+                            required
+                            maxLength={4}
+                            pattern="\d{4}"
+                            autoComplete="off"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-brand-500"
+                            placeholder="1234"
+                            value={kycForm.pin}
+                            onChange={e => setKycForm({ ...kycForm, pin: e.target.value.replace(/\D/g, '').substring(0, 4) })}
+                          />
+                        </div>
                       </div>
                       <div>
                         <label className="block text-xs text-white/50 font-semibold mb-1">Selfie Verification</label>

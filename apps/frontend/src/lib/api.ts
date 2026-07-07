@@ -1,14 +1,14 @@
 export const api = {
   async getBalance(email: string) {
-    const res = await fetch(`/api/balance?email=${email}`);
+    const res = await fetch(`/api/balance?email=${email}`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
     return res.json();
   },
   async getCard(email: string) {
-    const res = await fetch(`/api/card?email=${email}`);
+    const res = await fetch(`/api/card?email=${email}`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
     return res.json();
   },
   async getSubscriptions(email: string) {
-    const res = await fetch(`/api/subscriptions?email=${email}`);
+    const res = await fetch(`/api/subscriptions?email=${email}`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
     return res.json();
   },
   async auth(name: string, email: string) {
@@ -20,7 +20,7 @@ export const api = {
     return res.json();
   },
   async getDepositInfo(email: string) {
-    const res = await fetch(`/api/deposit/info?email=${email}`);
+    const res = await fetch(`/api/deposit/info?email=${email}`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
     return res.json();
   },
   async deposit(email: string, amountNaira: number) {
@@ -39,11 +39,11 @@ export const api = {
     });
     return res.json();
   },
-  async requestCard(email: string) {
+  async requestCard(email: string, pin: string = '1234') {
     const res = await fetch('/api/card', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, pin })
     });
     return res.json();
   },

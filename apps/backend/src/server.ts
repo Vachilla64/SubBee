@@ -8,6 +8,7 @@ import cors from 'cors';
 import crypto from 'crypto';
 import { db } from './db';
 import { cardQueue, schedulerQueue } from './workers/queue';
+import { bridgecard } from './services/bridgecard/client';
 
 // Import workers to ensure they register and start listening to Redis
 import './workers/deposit.worker';
@@ -143,7 +144,6 @@ app.post(
 app.use(express.json());
 
 // ─── User Facing API Routes (M2 & Frontend Integration) ──────────────────────
-import { bridgecard } from './services/bridgecard/client';
 
 // Helper to look up user by email
 async function getUserByEmail(email: string) {
@@ -193,7 +193,7 @@ app.post('/api/auth', async (req: Request, res: Response) => {
       return newUser;
     });
 
-    res.json({ name: name || email.split('@')[0], email: user.email, id: user.id });
+    res.json({ name: name || email.split('@')[0], email: user.email, id: user.id, kycStatus: user.kyc_status });
   } catch (error: any) {
     console.error('[api/auth] Error during authentication:', error);
     res.status(500).json({ error: error.message });
@@ -225,25 +225,45 @@ app.post('/api/kyc', async (req: Request, res: Response) => {
       addressPostalCode: postalCode
     });
 
-    const nombaAccount = await createNombaVirtualAccount({
-      accountRef: user.id,
-      accountName: `${firstName} ${lastName}`,
-      bvn: bvn
-    });
+    // Check if Nomba account already exists locally
+    const existingNombaRes = await db.query(
+      "SELECT bank_account_number as \"bankAccountNumber\", bank_name as \"bankName\" FROM virtual_accounts WHERE user_id = $1 AND provider = 'nomba'",
+      [user.id]
+    );
+
+    let nombaAccount = existingNombaRes.rows[0] || null;
+
+    if (!nombaAccount) {
+      nombaAccount = await createNombaVirtualAccount({
+        accountRef: user.id,
+        accountName: `${firstName} ${lastName}`,
+        bvn: bvn
+      });
+    }
 
     await db.transaction(async (client) => {
       // Create cardholder profile record
-      await client.query(
-        `INSERT INTO cardholders (user_id, bridgecard_cardholder_id, status, first_name, last_name, phone, email, dob, bvn, address_street, address_state, address_lga, address_postal_code) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-        [user.id, bridgecardId, 'active', firstName, lastName, phone, email, dob, bvn, address, state, lga, postalCode]
-      );
+      const existingCh = await client.query('SELECT id FROM cardholders WHERE user_id = $1', [user.id]);
+      if (existingCh.rowCount !== null && existingCh.rowCount > 0) {
+        await client.query(
+          `UPDATE cardholders SET bridgecard_cardholder_id = $2, status = $3, first_name = $4, last_name = $5, phone = $6, email = $7, dob = $8, bvn = $9, address_street = $10, address_state = $11, address_lga = $12, address_postal_code = $13 WHERE user_id = $1`,
+          [user.id, bridgecardId, 'active', firstName, lastName, phone, email, dob, bvn, address, state, lga, postalCode]
+        );
+      } else {
+        await client.query(
+          `INSERT INTO cardholders (user_id, bridgecard_cardholder_id, status, first_name, last_name, phone, email, dob, bvn, address_street, address_state, address_lga, address_postal_code) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          [user.id, bridgecardId, 'active', firstName, lastName, phone, email, dob, bvn, address, state, lga, postalCode]
+        );
+      }
 
-      // Save Nomba Virtual Account
-      await client.query(
-        'INSERT INTO virtual_accounts (user_id, provider, account_ref, bank_account_number, bank_name) VALUES ($1, $2, $3, $4, $5)',
-        [user.id, 'nomba', user.id, nombaAccount.bankAccountNumber, nombaAccount.bankName]
-      );
+      if (existingNombaRes.rowCount === 0 && nombaAccount) {
+        // Save Nomba Virtual Account
+        await client.query(
+          'INSERT INTO virtual_accounts (user_id, provider, account_ref, bank_account_number, bank_name) VALUES ($1, $2, $3, $4, $5)',
+          [user.id, 'nomba', user.id, nombaAccount.bankAccountNumber, nombaAccount.bankName]
+        );
+      }
 
       // Update user kyc_status to verified
       await client.query(
@@ -323,6 +343,7 @@ app.get('/api/balance', async (req: Request, res: Response) => {
     res.json({
       balanceKobo,
       bankAccount,
+      kycStatus: user.kyc_status,
       telegramConnected: !!user.telegram_chat_id,
       telegramBotUsername: botUsername
     });
@@ -399,7 +420,7 @@ app.post('/api/deposit', async (req: Request, res: Response) => {
 
 // 5. Issue Card (Lazy card issuance)
 app.post('/api/card', async (req: Request, res: Response) => {
-  const { email } = req.body;
+  const { email, pin } = req.body;
   if (!email) {
     res.status(400).json({ error: 'Email is required' });
     return;
@@ -421,7 +442,7 @@ app.post('/api/card', async (req: Request, res: Response) => {
     const cardholder = chRes.rows[0];
 
     // Call Bridgecard client to lazy issue card
-    const cardData = await bridgecard.createVirtualCard(cardholder.bridgecard_cardholder_id);
+    const cardData = await bridgecard.createVirtualCard(cardholder.bridgecard_cardholder_id, pin || '1234');
 
     // Save card details in cards table
     await db.query(
@@ -609,6 +630,18 @@ app.post('/api/debug/trigger-sweep', async (req: Request, res: Response) => {
   }
 });
 
+// Debug — Fund sandbox issuing wallet (required before any card can be funded on Bridgecard sandbox)
+app.post('/api/debug/fund-issuing-wallet', async (req: Request, res: Response) => {
+  try {
+    const amountKobo = Number(req.body.amountKobo ?? 10_000_000); // default ₦100,000
+    await bridgecard.fundIssuingWallet(amountKobo);
+    res.json({ status: 'success', message: `Funded sandbox issuing wallet with ${amountKobo} kobo (₦${amountKobo / 100})` });
+  } catch (error: any) {
+    console.error('[api/debug/fund-issuing-wallet] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ─── 404 fallback ─────────────────────────────────────────────────────────────
 
 app.use((_req: Request, res: Response) => {
@@ -669,3 +702,5 @@ app.listen(PORT, () => {
 });
 
 export default app;
+// Trivial change to trigger nodemon restart after EADDRINUSE race condition.
+
