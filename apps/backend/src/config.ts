@@ -17,6 +17,7 @@ interface Config {
   BRIDGECARD_TOKEN: string;
   BRIDGECARD_SECRET_KEY: string;
   BRIDGECARD_WEBHOOK_SECRET: string;
+  GEMINI_API_KEY: string;
 }
 
 // Read raw environment variables
@@ -36,6 +37,7 @@ const rawConfig = {
   BRIDGECARD_TOKEN: process.env.BRIDGECARD_TOKEN ?? '',
   BRIDGECARD_SECRET_KEY: process.env.BRIDGECARD_SECRET_KEY ?? '',
   BRIDGECARD_WEBHOOK_SECRET: process.env.BRIDGECARD_WEBHOOK_SECRET ?? '',
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? '',
 };
 
 // Define variables that MUST be populated for the server to operate safely
@@ -47,6 +49,7 @@ const REQUIRED_KEYS: Array<keyof typeof rawConfig> = [
   'NOMBA_ACCOUNT_ID',
   'NOMBA_SUB_ACCOUNT_ID',
   'TELEGRAM_BOT_TOKEN',
+  'GEMINI_API_KEY',
 ];
 
 const missingKeys = REQUIRED_KEYS.filter((key) => !rawConfig[key]);

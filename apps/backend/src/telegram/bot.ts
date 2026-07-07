@@ -4,6 +4,7 @@ import { db } from '../db';
 import { createNombaVirtualAccount } from '../services/nomba/accounts';
 import { bridgecard } from '../services/bridgecard/client';
 import { fundVirtualCard } from '../services/funding';
+import { processNaturalLanguageCommand, UserContext } from '../services/ai';
 
 if (!config.TELEGRAM_BOT_TOKEN) {
   throw new Error('[telegram/bot] TELEGRAM_BOT_TOKEN must be configured at startup.');
@@ -275,6 +276,65 @@ bot.command('fund_card', async (ctx) => {
   } catch (error: any) {
     console.error('[telegram/bot] Fund card error:', error);
     await ctx.reply(`⚠️ ${error.message || 'Sorry, there was an error processing your card funding request.'}`);
+  }
+});
+
+/**
+ * Catch-all for natural language AI processing
+ */
+bot.on('message:text', async (ctx) => {
+  if (ctx.message.text.startsWith('/')) return; // Ignore explicit commands
+
+  const telegramChatId = String(ctx.chat.id);
+  const userMessage = ctx.message.text;
+
+  // Send a typing indicator
+  await ctx.replyWithChatAction('typing');
+
+  try {
+    // 1. Resolve User
+    const userRes = await db.query('SELECT id, email FROM users WHERE telegram_chat_id = $1', [telegramChatId]);
+    if (userRes.rowCount === 0) {
+      await ctx.reply('⚠️ You do not have a SubBee account yet. Run /start to set one up!');
+      return;
+    }
+    const user = userRes.rows[0];
+
+    // 2. Fetch context data
+    const walletRes = await db.query("SELECT current_balance FROM ledger_accounts WHERE user_id = $1 AND type = 'wallet'", [user.id]);
+    const cardRes = await db.query("SELECT current_balance FROM ledger_accounts WHERE user_id = $1 AND type = 'card'", [user.id]);
+    const vaRes = await db.query("SELECT bank_account_number, bank_name FROM virtual_accounts WHERE user_id = $1", [user.id]);
+    const subsRes = await db.query("SELECT merchant_name, amount_kobo, billing_day, is_active FROM subscriptions WHERE user_id = $1", [user.id]);
+
+    const walletBalanceNaira = (Number(walletRes.rows[0]?.current_balance || 0) / 100).toFixed(2);
+    const virtualCardBalanceNaira = (Number(cardRes.rows[0]?.current_balance || 0) / 100).toFixed(2);
+    
+    const subscriptions = subsRes.rows.map(s => ({
+      merchant: s.merchant_name,
+      amount: (Number(s.amount_kobo) / 100).toFixed(2),
+      billingDay: s.billing_day,
+      status: s.is_active ? 'Active' : 'Paused'
+    }));
+
+    const contextData: UserContext = {
+      firstName: ctx.from.first_name || 'User',
+      email: user.email,
+      walletBalanceNaira,
+      virtualCardBalanceNaira,
+      bankAccount: vaRes.rows[0]?.bank_account_number || null,
+      bankName: vaRes.rows[0]?.bank_name || null,
+      subscriptions
+    };
+
+    // 3. Process via Gemini
+    const aiResponse = await processNaturalLanguageCommand(userMessage, contextData);
+
+    // 4. Reply
+    await ctx.reply(aiResponse, { parse_mode: 'Markdown' });
+
+  } catch (err) {
+    console.error('[telegram/bot] Error processing AI message:', err);
+    await ctx.reply("Bzzzt! My connection to the hive dropped. Try again later!");
   }
 });
 

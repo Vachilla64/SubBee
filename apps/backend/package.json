@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@google/genai": "^2.10.0",
     "aes-everywhere": "^1.0.0",
     "bullmq": "^5.8.1",
     "cors": "^2.8.5",
