@@ -81,6 +81,8 @@ export default function App() {
   const [subAmount, setSubAmount] = useState(MERCHANTS[0].defaultPrice.toString());
   const [subBillingDay, setSubBillingDay] = useState('5');
   const [subReminders, setSubReminders] = useState(true);
+  const [depositInfo, setDepositInfo] = useState<{accountNumber: string | null; bankName: string | null}>({accountNumber: null, bankName: null});
+  const [telegramBotUsername, setTelegramBotUsername] = useState('SubBeeBot');
 
   // --- Initialize data from API ---
   const loadUserData = async (email: string) => {
@@ -88,6 +90,10 @@ export default function App() {
       const balData = await api.getBalance(email);
       setBalanceKobo(balData.balanceKobo || 0);
       setTelegramConnected(balData.telegramConnected || false);
+      if (balData.telegramBotUsername) setTelegramBotUsername(balData.telegramBotUsername);
+
+      const depData = await api.getDepositInfo(email);
+      if (depData && depData.accountNumber) setDepositInfo(depData);
 
       const cardData = await api.getCard(email);
       if (cardData.status && cardData.status !== 'inactive') {
@@ -389,8 +395,14 @@ export default function App() {
               {/* Deposit Account Details */}
               <div className="glass-card p-6 flex flex-col justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-white/40 font-semibold mb-1">Deposit Accounts (Nomba MFB)</p>
-                  <p className="text-sm font-semibold text-white/80">Account: 8235885652</p>
+                  <p className="text-xs uppercase tracking-wider text-white/40 font-semibold mb-1">Deposit Accounts ({depositInfo.bankName || 'Awaiting KYC'})</p>
+                  {depositInfo.accountNumber ? (
+                    <p className="text-sm font-semibold text-white/80">Account: {depositInfo.accountNumber}</p>
+                  ) : (
+                    <p className="text-sm font-semibold text-brand-500 cursor-pointer animate-pulse" onClick={() => setActiveTab('card')}>
+                      Complete KYC to get an account
+                    </p>
+                  )}
                   <p className="text-xs text-white/40 mt-0.5">Permanent account assigned to your profile</p>
                 </div>
                 <div className="mt-4 text-xs bg-white/5 p-3 rounded-lg border border-white/5 text-white/60">
@@ -420,7 +432,7 @@ export default function App() {
                     <p className="text-xs text-white/50">Your connection code: <strong>{telegramCode}</strong></p>
                   </div>
                   <a
-                    href={`https://t.me/SubBeeBot?start=${telegramCode}`}
+                    href={`https://t.me/${telegramBotUsername}?start=${telegramCode}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-brand-500 hover:bg-brand-400 text-navy-900 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-md shadow-brand-500/20"

@@ -19,6 +19,10 @@ export const api = {
     });
     return res.json();
   },
+  async getDepositInfo(email: string) {
+    const res = await fetch(`/api/deposit/info?email=${email}`);
+    return res.json();
+  },
   async deposit(email: string, amountNaira: number) {
     const res = await fetch('/api/deposit', {
       method: 'POST',

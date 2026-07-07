@@ -42,3 +42,19 @@ export const cardQueue = new Queue('card-queue', {
 
 console.log('[queue] Card queue initialized.');
 
+// Initialize the scheduler queue for recurring subscription jobs
+export const schedulerQueue = new Queue('scheduler-queue', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+    removeOnComplete: true,
+    removeOnFail: 100,
+  },
+});
+
+console.log('[queue] Scheduler queue initialized.');
+

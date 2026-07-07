@@ -3,7 +3,7 @@ import { config } from '../config';
 import { db } from '../db';
 import { createNombaVirtualAccount } from '../services/nomba/accounts';
 import { bridgecard } from '../services/bridgecard/client';
-import crypto from 'crypto';
+import { fundVirtualCard } from '../services/funding';
 
 if (!config.TELEGRAM_BOT_TOKEN) {
   throw new Error('[telegram/bot] TELEGRAM_BOT_TOKEN must be configured at startup.');
@@ -263,42 +263,8 @@ bot.command('fund_card', async (ctx) => {
     }
     const user = userRes.rows[0];
 
-    // 2. Resolve virtual card
-    const cardRes = await db.query('SELECT id, bridgecard_card_id FROM cards WHERE user_id = $1', [user.id]);
-    if (cardRes.rowCount === 0) {
-      await ctx.reply('⚠️ You do not have an active virtual card yet. Run /card to issue one.');
-      return;
-    }
-    const card = cardRes.rows[0];
-
-    // 3. Enforce balance checks before enqueuing Bridgecard fund transfer
-    const walletRes = await db.query(
-      "SELECT current_balance FROM ledger_accounts WHERE user_id = $1 AND type = 'wallet'",
-      [user.id]
-    );
-    const balanceKobo = BigInt(walletRes.rows[0]?.current_balance ?? 0);
-
-    if (balanceKobo < BigInt(amountKobo)) {
-      const balanceNairaFormatted = (Number(balanceKobo) / 100).toFixed(2);
-      await ctx.reply(
-        `❌ *Insufficient Balance!*\n\n` +
-        `Your SubBee wallet balance (₦${balanceNairaFormatted}) is not enough to fund ₦${amountNaira.toFixed(2)}.\n\n` +
-        `Please top up your wallet by transfering funds to your virtual account numbers first.`,
-        { parse_mode: 'Markdown' }
-      );
-      return;
-    }
-
-    // 4. Create pending transfer record
-    const reference = `tf_${crypto.randomBytes(8).toString('hex')}`;
-    await db.query(
-      `INSERT INTO pending_transfers (user_id, card_id, amount_kobo, reference, status) 
-       VALUES ($1, $2, $3, $4, 'pending')`,
-      [user.id, card.id, amountKobo, reference]
-    );
-
-    // 5. Trigger Bridgecard API call (asynchronously settled via webhook)
-    await bridgecard.fundCard(card.bridgecard_card_id, amountKobo, reference);
+    // 2. Fund virtual card using shared service
+    await fundVirtualCard(user.id, amountKobo);
 
     await ctx.reply(
       `⏳ *Funding Request Sent!*\n\n` +
@@ -308,7 +274,7 @@ bot.command('fund_card', async (ctx) => {
     );
   } catch (error: any) {
     console.error('[telegram/bot] Fund card error:', error);
-    await ctx.reply('⚠️ Sorry, there was an error processing your card funding request. Please try again.');
+    await ctx.reply(`⚠️ ${error.message || 'Sorry, there was an error processing your card funding request.'}`);
   }
 });
 
@@ -319,4 +285,13 @@ if (config.NODE_ENV !== 'test') {
       console.log(`[telegram/bot] Bot @${info.username} started successfully.`);
     },
   });
+
+  // Enable graceful stop for nodemon reloads
+  const stopBot = async () => {
+    try { await bot.stop(); } catch (e) {}
+    process.exit(0);
+  };
+  process.once('SIGINT', stopBot);
+  process.once('SIGTERM', stopBot);
+  process.once('SIGUSR2', stopBot);
 }

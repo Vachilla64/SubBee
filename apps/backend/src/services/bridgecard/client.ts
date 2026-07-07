@@ -227,9 +227,10 @@ class BridgecardClient {
 
   // Private helpers
   private getHeaders(): Record<string, string> {
+    const formattedToken = this.token.startsWith('Bearer ') ? this.token : `Bearer ${this.token}`;
     return {
       'Content-Type': 'application/json',
-      'token': this.token,
+      'token': formattedToken,
       'clientSecret': this.secretKey
     };
   }

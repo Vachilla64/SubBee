@@ -7,15 +7,25 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import crypto from 'crypto';
 import { db } from './db';
-import { depositQueue, cardQueue } from './workers/queue';
+import { cardQueue, schedulerQueue } from './workers/queue';
 
 // Import workers to ensure they register and start listening to Redis
 import './workers/deposit.worker';
 import './workers/card.worker';
-import './telegram/bot';
+import './workers/scheduler.worker';
+import { bot } from './telegram/bot';
+import nombaWebhookRouter from './webhooks/nomba';
+import { createNombaVirtualAccount } from './services/nomba/accounts';
+
+let botUsername = 'SubBeeBot';
+bot.api.getMe().then((me) => {
+  botUsername = me.username;
+  console.log(`[server] Fetched active bot username: @${botUsername}`);
+}).catch((err) => {
+  console.error('[server] Failed to fetch bot username:', err);
+});
 
 const PORT = config.PORT;
-const NOMBA_WEBHOOK_SECRET = config.NOMBA_WEBHOOK_SECRET;
 
 const app: Application = express();
 
@@ -32,93 +42,7 @@ app.get('/', (_req: Request, res: Response) => {
   });
 });
 
-app.post(
-  '/webhooks/nomba',
-  express.raw({ type: 'application/json' }),
-  async (req: Request, res: Response) => {
-    // ── Step 1: signature verification ────────────────────────────────────────
-    const incomingSignature = (req.headers['nomba-signature'] ??
-      req.headers['x-nomba-signature']) as string | undefined;
-
-    if (!incomingSignature) {
-      console.warn('[webhook/nomba] Missing signature header — 401');
-      res.status(401).json({ error: 'Missing signature header' });
-      return;
-    }
-
-    const rawBody = req.body as Buffer;
-    const computedHmac = crypto
-      .createHmac('sha512', NOMBA_WEBHOOK_SECRET)
-      .update(rawBody)
-      .digest('hex');
-
-    let isValid = false;
-    try {
-      const sigBuffer = Buffer.from(incomingSignature, 'hex');
-      const computedBuffer = Buffer.from(computedHmac, 'hex');
-      isValid =
-        sigBuffer.length === computedBuffer.length &&
-        crypto.timingSafeEqual(sigBuffer, computedBuffer);
-    } catch {
-      isValid = false;
-    }
-
-    if (!isValid) {
-      console.warn('[webhook/nomba] Invalid HMAC signature — 401');
-      res.status(401).json({ error: 'Invalid signature' });
-      return;
-    }
-
-    // ── Step 2: Parse payload ─────────────────────────────────────────────────
-    let payload: any;
-    try {
-      payload = JSON.parse(rawBody.toString('utf-8'));
-    } catch {
-      res.status(400).json({ error: 'Invalid JSON payload' });
-      return;
-    }
-
-    const data = payload['data'];
-    const transaction = data?.['transaction'];
-    const eventId =
-      transaction?.['transactionId'] ??
-      payload['requestId'] ??
-      'unknown';
-    const eventType = payload['eventType'] ?? 'unknown';
-
-    try {
-      // ── Step 3: Idempotency check via DB Unique Constraint ───────────────────
-      // Saves the event first; does nothing if we already received it.
-      const dbInsert = await db.query(
-        `INSERT INTO webhook_events (provider, event_id, event_type, raw_payload) 
-         VALUES ($1, $2, $3, $4) 
-         ON CONFLICT (provider, event_id) DO NOTHING`,
-        ['nomba', eventId, eventType, JSON.stringify(payload)]
-      );
-
-      if (dbInsert.rowCount === 0) {
-        console.log(`[webhook/nomba] Duplicate event ignored: ${eventId}`);
-        res.status(200).json({ received: true, duplicate: true });
-        return;
-      }
-
-      // ── Step 4: Enqueue job to BullMQ ────────────────────────────────────────
-      await depositQueue.add('process-deposit', {
-        eventId,
-        eventType,
-        payload,
-      });
-
-      console.log('[webhook/nomba] Webhook enqueued successfully', { eventId, eventType });
-
-      // ── Step 5: Acknowledge Nomba immediately ──────────────────────────────
-      res.status(200).json({ received: true });
-    } catch (error: any) {
-      console.error('[webhook/nomba] Error handling webhook:', error);
-      res.status(500).json({ error: 'Internal processing failure' });
-    }
-  }
-);
+app.use('/webhooks/nomba', nombaWebhookRouter);
 
 // ─── Bridgecard webhook receiver (skeleton — implementation in M2) ────────────
 
@@ -264,12 +188,7 @@ app.post('/api/auth', async (req: Request, res: Response) => {
         [newUser.id]
       );
 
-      // Create static virtual account details (Nomba MFB simulation)
-      const mockAccountNumber = Math.floor(1000000000 + Math.random() * 9000000000).toString();
-      await client.query(
-        'INSERT INTO virtual_accounts (user_id, provider, account_ref, bank_account_number, bank_name) VALUES ($1, $2, $3, $4, $5)',
-        [newUser.id, 'nomba', 'ref_' + newUser.id.substring(0, 8), mockAccountNumber, 'Nomba MFB']
-      );
+      // (Virtual account creation deferred until KYC)
 
       return newUser;
     });
@@ -306,12 +225,24 @@ app.post('/api/kyc', async (req: Request, res: Response) => {
       addressPostalCode: postalCode
     });
 
+    const nombaAccount = await createNombaVirtualAccount({
+      accountRef: user.id,
+      accountName: `${firstName} ${lastName}`,
+      bvn: bvn
+    });
+
     await db.transaction(async (client) => {
       // Create cardholder profile record
       await client.query(
         `INSERT INTO cardholders (user_id, bridgecard_cardholder_id, status, first_name, last_name, phone, email, dob, bvn, address_street, address_state, address_lga, address_postal_code) 
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
         [user.id, bridgecardId, 'active', firstName, lastName, phone, email, dob, bvn, address, state, lga, postalCode]
+      );
+
+      // Save Nomba Virtual Account
+      await client.query(
+        'INSERT INTO virtual_accounts (user_id, provider, account_ref, bank_account_number, bank_name) VALUES ($1, $2, $3, $4, $5)',
+        [user.id, 'nomba', user.id, nombaAccount.bankAccountNumber, nombaAccount.bankName]
       );
 
       // Update user kyc_status to verified
@@ -324,6 +255,39 @@ app.post('/api/kyc', async (req: Request, res: Response) => {
     res.json({ status: 'success', cardholderId: bridgecardId });
   } catch (error: any) {
     console.error('[api/kyc] Error submitting KYC:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 2b. Get Deposit Information
+app.get('/api/deposit/info', async (req: Request, res: Response) => {
+  const email = req.query.email as string;
+  if (!email) {
+    res.status(400).json({ error: 'Email is required' });
+    return;
+  }
+
+  try {
+    const userRes = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (userRes.rowCount === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    const user = userRes.rows[0];
+
+    const accountRes = await db.query(
+      "SELECT bank_account_number as \"accountNumber\", bank_name as \"bankName\" FROM virtual_accounts WHERE user_id = $1 AND provider = 'nomba'",
+      [user.id]
+    );
+
+    if (accountRes.rowCount === 0) {
+      res.json({ accountNumber: null, bankName: null });
+      return;
+    }
+
+    res.json(accountRes.rows[0]);
+  } catch (error: any) {
+    console.error('[api/deposit/info] Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -359,7 +323,8 @@ app.get('/api/balance', async (req: Request, res: Response) => {
     res.json({
       balanceKobo,
       bankAccount,
-      telegramConnected: !!user.telegram_chat_id
+      telegramConnected: !!user.telegram_chat_id,
+      telegramBotUsername: botUsername
     });
   } catch (error: any) {
     console.error('[api/balance] Error fetching balance:', error);
@@ -632,6 +597,18 @@ app.delete('/api/subscriptions/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Debug Trigger Sweep Endpoint
+app.post('/api/debug/trigger-sweep', async (req: Request, res: Response) => {
+  try {
+    const { runAllForTesting } = req.body;
+    await schedulerQueue.add('daily-subscription-sweep-manual', { runAllForTesting: runAllForTesting !== false });
+    res.json({ status: 'success', message: 'Subscription sweep manually triggered.' });
+  } catch (error: any) {
+    console.error('[api/debug/trigger-sweep] Error triggering sweep:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ─── 404 fallback ─────────────────────────────────────────────────────────────
 
 app.use((_req: Request, res: Response) => {
@@ -648,6 +625,30 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 
+async function bootstrapScheduler() {
+  try {
+    // Clear any existing repeatable jobs to avoid duplicates
+    const repeatableJobs = await schedulerQueue.getRepeatableJobs();
+    for (const job of repeatableJobs) {
+      await schedulerQueue.removeRepeatableByKey(job.key);
+    }
+
+    // Schedule daily sweep at 8:00 AM
+    await schedulerQueue.add(
+      'daily-subscription-sweep',
+      {},
+      {
+        repeat: {
+          pattern: '0 8 * * *',
+        },
+      }
+    );
+    console.log('[server] Daily subscription sweep repeatable job scheduled.');
+  } catch (err) {
+    console.error('[server] Failed to bootstrap repeatable scheduler job:', err);
+  }
+}
+
 app.listen(PORT, () => {
   console.log(`
 ┌─────────────────────────────────────────────────┐
@@ -660,9 +661,11 @@ app.listen(PORT, () => {
 │    POST /webhooks/nomba                          │
 │    POST /webhooks/bridgecard  (skeleton)         │
 │                                                  │
-│  Milestone: M0 — skeleton                        │
+│  Milestone: M3 — Subscription Loop               │
 └─────────────────────────────────────────────────┘
   `);
+
+  bootstrapScheduler();
 });
 
 export default app;
