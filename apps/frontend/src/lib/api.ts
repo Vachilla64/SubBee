@@ -67,5 +67,9 @@ export const api = {
   async deleteSubscription(id: string) {
     const res = await fetch(`/api/subscriptions/${id}`, { method: 'DELETE' });
     return res.json();
+  },
+  async getTrustMetrics() {
+    const res = await fetch('/api/ops/trust-metrics', { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
+    return res.json();
   }
 };

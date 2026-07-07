@@ -9,17 +9,18 @@ async function setupTestUser(email: string) {
 
   if (userRes.rowCount === 0) {
     const newId = crypto.randomUUID();
+    const randPhone = '+2348' + Math.floor(100000000 + Math.random() * 900000000).toString();
     await db.query(
       `INSERT INTO users (id, email, phone, telegram_chat_id) 
        VALUES ($1, $2, $3, $4)`,
-      [newId, email, '+2348000000000', null]
+      [newId, email, randPhone, null]
     );
     userId = newId;
   } else {
     userId = userRes.rows[0].id;
   }
 
-  // Ensure wallet exists and reset balance to 0
+  // Ensure wallet exists
   let walletRes = await db.query("SELECT id FROM ledger_accounts WHERE user_id = $1 AND type = 'wallet'", [userId]);
   let walletId: string;
 
@@ -31,7 +32,6 @@ async function setupTestUser(email: string) {
     walletId = newWallet.rows[0].id;
   } else {
     walletId = walletRes.rows[0].id;
-    await db.query("UPDATE ledger_accounts SET current_balance = 0 WHERE id = $1", [walletId]);
   }
 
   return { userId, walletId };
@@ -39,7 +39,7 @@ async function setupTestUser(email: string) {
 
 async function runStressTests() {
   console.log('🧪 Starting Extensive Stress Tests...');
-  const testEmail = 'stresstest@subbee.test';
+  const testEmail = `stresstest-${crypto.randomBytes(4).toString('hex')}@subbee.test`;
   
   // Clean up any old stress test data from previous runs if needed
   const { userId, walletId } = await setupTestUser(testEmail);
@@ -235,8 +235,27 @@ async function runStressTests() {
     console.error('❌ FAILURE: Ledger invariants violated after concurrency load!', err.message);
   }
 
-  // Cleanup stress test user balance to avoid polluting main data
-  await db.query("UPDATE ledger_accounts SET current_balance = 0 WHERE id = $1", [walletId]);
+  // Reconcile stress test user balance to exactly 0 with a proper adjusting double-entry leg
+  const cleanRes = await db.query("SELECT current_balance FROM ledger_accounts WHERE id = $1", [walletId]);
+  const currentBal = Number(cleanRes.rows[0].current_balance);
+  if (currentBal !== 0) {
+    console.log(`[Cleanup] Reconciling stress test balance of ${currentBal} kobo to 0...`);
+    const txnId = crypto.randomUUID();
+    await db.transaction(async (client) => {
+      // Debit wallet, Credit Nomba Pool
+      await client.query("UPDATE ledger_accounts SET current_balance = current_balance - $1 WHERE id = $2", [currentBal, walletId]);
+      await client.query("UPDATE ledger_accounts SET current_balance = current_balance + $1 WHERE id = $2", [currentBal, poolId]);
+      await client.query(
+        "INSERT INTO ledger_entries (txn_id, account_id, direction, amount, source_type, source_ref) VALUES ($1, $2, 'debit', $3, 'adjustment', 'stress_cleanup')",
+        [txnId, walletId, currentBal]
+      );
+      await client.query(
+        "INSERT INTO ledger_entries (txn_id, account_id, direction, amount, source_type, source_ref) VALUES ($1, $2, 'credit', $3, 'adjustment', 'stress_cleanup')",
+        [txnId, poolId, currentBal]
+      );
+    });
+  }
+  
   console.log('\n🧹 Stress Test Run Finished.');
   process.exit(0);
 }

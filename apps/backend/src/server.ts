@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import { db } from './db';
 import { cardQueue, schedulerQueue, invariantQueue, reconciliationQueue } from './workers/queue';
 import { bridgecard } from './services/bridgecard/client';
+import { checkBalanceIntegrity, checkZeroSum, checkOverdrafts } from './ledger/invariants';
 
 // Import workers to ensure they register and start listening to Redis
 import './workers/deposit.worker';
@@ -639,6 +640,61 @@ app.post('/api/debug/fund-issuing-wallet', async (req: Request, res: Response) =
     res.json({ status: 'success', message: `Funded sandbox issuing wallet with ${amountKobo} kobo (₦${amountKobo / 100})` });
   } catch (error: any) {
     console.error('[api/debug/fund-issuing-wallet] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/ops/trust-metrics — Returns system-wide ledger invariants & health metrics
+app.get('/api/ops/trust-metrics', async (_req: Request, res: Response) => {
+  try {
+    let balanceIntegrity = 'Passed';
+    let zeroSum = 'Passed';
+    let overdraftCheck = 'Passed';
+
+    try {
+      await checkBalanceIntegrity();
+    } catch (e: any) {
+      balanceIntegrity = e.message;
+    }
+
+    try {
+      await checkZeroSum();
+    } catch (e: any) {
+      zeroSum = e.message;
+    }
+
+    try {
+      await checkOverdrafts();
+    } catch (e: any) {
+      overdraftCheck = e.message;
+    }
+
+    const floatKobo = await bridgecard.getIssuingWalletBalance().catch(() => 0);
+
+    const poolRes = await db.query("SELECT current_balance FROM ledger_accounts WHERE type = 'nomba_pool' LIMIT 1");
+    const poolKobo = Number(poolRes.rows[0]?.current_balance || 0);
+
+    const statsRes = await db.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM users) as users_count,
+        (SELECT COUNT(*) FROM subscriptions) as subs_count,
+        (SELECT COUNT(*) FROM ledger_entries) as ledger_count
+    `);
+
+    res.json({
+      balanceIntegrity,
+      zeroSum,
+      overdraftCheck,
+      floatKobo,
+      poolKobo,
+      stats: {
+        usersCount: Number(statsRes.rows[0].users_count),
+        subsCount: Number(statsRes.rows[0].subs_count),
+        ledgerCount: Number(statsRes.rows[0].ledger_count)
+      }
+    });
+  } catch (error: any) {
+    console.error('[api/ops/trust-metrics] Error:', error);
     res.status(500).json({ error: error.message });
   }
 });

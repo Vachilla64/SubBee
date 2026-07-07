@@ -1,8 +1,8 @@
 import { Worker, Job } from 'bullmq';
-import { invariantQueue, reconciliationQueue, redisConnection } from './queue';
+import { redisConnection } from './queue';
 import { runAllInvariants } from '../ledger/invariants';
 import { bridgecard } from '../services/bridgecard/client';
-import { bot } from '../services/telegram/bot';
+import { bot } from '../telegram/bot';
 import { db } from '../db';
 import crypto from 'crypto';
 
@@ -38,7 +38,7 @@ const recWorker = new Worker(
           const msg = `⚠️ *LOW FLOAT ALERT* ⚠️\n\nThe Bridgecard Issuing Wallet balance has dropped below ₦20,000.00!\nCurrent Balance: ₦${balanceNaira}\n\nPlease top up immediately to prevent failed card fundings.`;
           
           const userRes = await db.query('SELECT telegram_chat_id FROM users WHERE telegram_chat_id IS NOT NULL LIMIT 1');
-          if (userRes.rowCount > 0) {
+          if (userRes.rowCount && userRes.rowCount > 0) {
             await bot.api.sendMessage(userRes.rows[0].telegram_chat_id, msg, { parse_mode: 'Markdown' });
           }
         } else {
@@ -86,7 +86,7 @@ const recWorker = new Worker(
               const walletAcc = walletRes.rows[0];
 
               // Lock card
-              const lockedCardRes = await client.query(
+              await client.query(
                 "SELECT id FROM ledger_accounts WHERE id = $1 FOR UPDATE",
                 [cardAcc.account_id]
               );
@@ -97,7 +97,7 @@ const recWorker = new Worker(
                 [amountKobo, cardAcc.account_id]
               );
 
-              if (debitRes.rowCount > 0) {
+              if (debitRes.rowCount && debitRes.rowCount > 0) {
                 // Credit wallet
                 await client.query(
                   "UPDATE ledger_accounts SET current_balance = current_balance + $1 WHERE id = $2",

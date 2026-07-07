@@ -43,9 +43,9 @@ const worker = new Worker(
         try {
           await bot.api.sendMessage(
             sub.telegram_chat_id,
-            `⏰ *Subscription Reminder!*\n\n` +
-            `Your subscription for *${sub.merchant_name}* (₦${amountNaira}) is due tomorrow.\n\n` +
-            `Please ensure your SubBee wallet has sufficient balance to cover this automatic transfer.`,
+            `🐝 *Gentle Buzz! Subscription Reminder*\n\n` +
+            `Your *${sub.merchant_name}* subscription (₦${amountNaira}) is due tomorrow.\n\n` +
+            `Please make sure your SubBee honey pot has enough funds so we can take care of it for you! 🍯`,
             { parse_mode: 'Markdown' }
           );
           console.log(`[worker/scheduler] Reminder sent to user ${sub.user_id} for ${sub.merchant_name}`);
@@ -66,10 +66,9 @@ const worker = new Worker(
             try {
               await bot.api.sendMessage(
                 sub.telegram_chat_id,
-                `🐝 *JIT Funding Triggered!*\n\n` +
-                `We have automatically transferred ₦${amountNaira} from your SubBee wallet to your virtual card to cover your *${sub.merchant_name}* subscription.\n\n` +
-                `• *Status:* Pending Settlement\n` +
-                `• *Reference:* \`${reference}\``,
+                `🍯 *Sweet Success! Payment Processing*\n\n` +
+                `We've just moved ₦${amountNaira} from your SubBee wallet to your virtual card for your *${sub.merchant_name}* subscription.\n\n` +
+                `Sit back and relax while we handle the rest! 🐝`,
                 { parse_mode: 'Markdown' }
               );
             } catch (botErr) {
@@ -83,10 +82,9 @@ const worker = new Worker(
             try {
               await bot.api.sendMessage(
                 sub.telegram_chat_id,
-                `⚠️ *Action Required: Subscription Payment Failed!*\n\n` +
-                `We were unable to fund your virtual card for your *${sub.merchant_name}* subscription of ₦${amountNaira}.\n\n` +
-                `🔴 *Reason:* ${fundErr.message || 'Unknown funding error'}\n\n` +
-                `Please top up your SubBee wallet as soon as possible to keep your subscriptions active.`,
+                `🌸 *Oops! We need a little more honey!*\n\n` +
+                `We tried to process your *${sub.merchant_name}* subscription (₦${amountNaira}), but there was a hiccup.\n\n` +
+                `Please top up your SubBee wallet so we can get your subscriptions blooming again! 🐝`,
                 { parse_mode: 'Markdown' }
               );
             } catch (botErr) {

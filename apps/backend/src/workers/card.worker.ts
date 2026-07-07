@@ -126,7 +126,7 @@ const worker = new Worker(
         // Fire message in background without blocking transaction release
         bot.api.sendMessage(
           telegramChatId,
-          `💳 *Virtual Card Funded!*\n\n₦${amountNairaFormatted} has been loaded onto your card.\nReference: \`${transaction_reference}\``,
+          `🌻 *Virtual Card Funded!*\n\n₦${amountNairaFormatted} has been successfully loaded onto your card and is ready to use! 🐝`,
           { parse_mode: 'Markdown' }
         ).catch((err) => console.error('[worker/card] Telegram notification failed:', err));
       }

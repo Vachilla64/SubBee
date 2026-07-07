@@ -114,7 +114,7 @@ const worker = new Worker(
       try {
         await bot.api.sendMessage(
           user.telegram_chat_id,
-          `💸 *Deposit Received!*\n\n₦${amountNaira} has been credited to your wallet.\nReference: \`${transactionId}\``,
+          `🍯 *Honey Pot Topped Up!*\n\nWe safely received your deposit! ₦${amountNaira} has been added to your SubBee wallet. 🐝`,
           { parse_mode: 'Markdown' }
         );
         console.log(`[worker/deposit] Telegram notification sent to user ${user.id}`);

@@ -47,12 +47,22 @@ export default function App() {
   const [authName, setAuthName] = useState('');
 
   // --- Active Tab State ---
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'kyc' | 'card' | 'subscriptions'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'kyc' | 'card' | 'subscriptions' | 'ops'>('dashboard');
 
   // --- Wallet & Balance State (Simulated) ---
   const [balanceKobo, setBalanceKobo] = useState<number>(0);
   const [telegramConnected, setTelegramConnected] = useState(false);
   const [telegramCode, setTelegramCode] = useState('');
+
+  // --- Ops / Trust State ---
+  const [trustMetrics, setTrustMetrics] = useState<{
+    balanceIntegrity: string;
+    zeroSum: string;
+    overdraftCheck: string;
+    floatKobo: number;
+    poolKobo: number;
+    stats: { usersCount: number; subsCount: number; ledgerCount: number }
+  } | null>(null);
 
   // --- KYC State ---
   const [kycSubmitted, setKycSubmitted] = useState(false);
@@ -111,6 +121,11 @@ export default function App() {
       if (Array.isArray(subData)) {
         setSubscriptions(subData);
       }
+
+      const metrics = await api.getTrustMetrics().catch(() => null);
+      if (metrics) {
+        setTrustMetrics(metrics);
+      }
     } catch (e) {
       console.error('Error loading user data:', e);
     }
@@ -126,14 +141,14 @@ export default function App() {
     }
   }, []);
 
-  // Poll for live data every 5 seconds if a user is logged in
-  // useEffect(() => {
-  //   if (!user?.email) return;
-  //   const intervalId = setInterval(() => {
-  //     loadUserData(user.email);
-  //   }, 5000);
-  //   return () => clearInterval(intervalId);
-  // }, [user?.email]);
+  // Poll for live data every 60 seconds to save database and API resources
+  useEffect(() => {
+    if (!user?.email) return;
+    const intervalId = setInterval(() => {
+      loadUserData(user.email);
+    }, 60000);
+    return () => clearInterval(intervalId);
+  }, [user?.email]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -352,6 +367,14 @@ export default function App() {
               }`}
             >
               <span>🔄</span> Subscriptions
+            </button>
+            <button
+              onClick={() => setActiveTab('ops')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-semibold transition-all ${
+                activeTab === 'ops' ? 'bg-brand-500 text-navy-900 shadow-md shadow-brand-500/10' : 'hover:bg-white/5 text-white/70'
+              }`}
+            >
+              <span>🛡️</span> Ops Dashboard
             </button>
           </nav>
         </div>
@@ -964,6 +987,108 @@ export default function App() {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ──────── TABS: OPS DASHBOARD ──────── */}
+        {activeTab === 'ops' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-extrabold">Ops & Trust Dashboard</h2>
+              <p className="text-sm text-white/50">Real-time ledger audit invariants & provider liquidity balances</p>
+            </div>
+
+            {trustMetrics ? (
+              <div className="space-y-6">
+                {/* Status Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Balance Integrity Invariant */}
+                  <div className="glass-card p-6 flex flex-col justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-white/40 font-semibold mb-1">Balance Integrity</p>
+                      <h4 className={`text-sm font-bold ${trustMetrics.balanceIntegrity === 'Passed' ? 'text-green-400' : 'text-red-400'}`}>
+                        {trustMetrics.balanceIntegrity === 'Passed' ? '🟢 Checked & Consistent' : '🔴 DRIFT DETECTED'}
+                      </h4>
+                    </div>
+                    <p className="text-[10px] text-white/40 mt-3 leading-tight">
+                      {trustMetrics.balanceIntegrity === 'Passed' 
+                        ? 'All user current balances exactly match calculated double-entry transaction sums.'
+                        : `Error: ${trustMetrics.balanceIntegrity}`}
+                    </p>
+                  </div>
+
+                  {/* Zero Sum Invariant */}
+                  <div className="glass-card p-6 flex flex-col justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-white/40 font-semibold mb-1">Zero-Sum Balance</p>
+                      <h4 className={`text-sm font-bold ${trustMetrics.zeroSum === 'Passed' ? 'text-green-400' : 'text-red-400'}`}>
+                        {trustMetrics.zeroSum === 'Passed' ? '🟢 Balanced' : '🔴 MISMATCH'}
+                      </h4>
+                    </div>
+                    <p className="text-[10px] text-white/40 mt-3 leading-tight">
+                      {trustMetrics.zeroSum === 'Passed' 
+                        ? 'Global credits equal global debits across all accounts (net system balance is zero).'
+                        : `Error: ${trustMetrics.zeroSum}`}
+                    </p>
+                  </div>
+
+                  {/* Overdraft Check Invariant */}
+                  <div className="glass-card p-6 flex flex-col justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-white/40 font-semibold mb-1">Overdraft Protection</p>
+                      <h4 className={`text-sm font-bold ${trustMetrics.overdraftCheck === 'Passed' ? 'text-green-400' : 'text-red-400'}`}>
+                        {trustMetrics.overdraftCheck === 'Passed' ? '🟢 Safe (No Overdrafts)' : '🔴 NEGATIVE BALANCES'}
+                      </h4>
+                    </div>
+                    <p className="text-[10px] text-white/40 mt-3 leading-tight">
+                      {trustMetrics.overdraftCheck === 'Passed' 
+                        ? 'Zero user accounts hold a negative balance. Constraints strictly enforced.'
+                        : `Error: ${trustMetrics.overdraftCheck}`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Liquidity / Provider Pools */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Bridgecard Float */}
+                  <div className="glass-card p-6">
+                    <p className="text-xs uppercase tracking-wider text-white/40 font-semibold mb-1">Bridgecard Sandbox Float Balance</p>
+                    <h3 className="text-3xl font-extrabold text-gradient">{formatNaira(trustMetrics.floatKobo)}</h3>
+                    <p className="text-xs text-white/40 mt-2">Required for Just-In-Time (JIT) Mastercards funding</p>
+                  </div>
+
+                  {/* Nomba Pool */}
+                  <div className="glass-card p-6">
+                    <p className="text-xs uppercase tracking-wider text-white/40 font-semibold mb-1">Nomba Deposit Pool Balance</p>
+                    <h3 className="text-3xl font-extrabold text-white/80">{formatNaira(Math.abs(trustMetrics.poolKobo))}</h3>
+                    <p className="text-xs text-white/40 mt-2">Accumulated user deposit settlement account balance</p>
+                  </div>
+                </div>
+
+                {/* Operations Stats */}
+                <div className="glass-card p-6">
+                  <h4 className="text-base font-bold mb-4">Core Platform Stats</h4>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                      <p className="text-2xl font-extrabold text-brand-300">{trustMetrics.stats.usersCount}</p>
+                      <p className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Registered Users</p>
+                    </div>
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                      <p className="text-2xl font-extrabold text-brand-300">{trustMetrics.stats.subsCount}</p>
+                      <p className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Subscriptions Monitored</p>
+                    </div>
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                      <p className="text-2xl font-extrabold text-brand-300">{trustMetrics.stats.ledgerCount}</p>
+                      <p className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Total Ledger Leg Entries</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="glass-card p-10 text-center text-white/40 animate-pulse">
+                Fetching trust metrics from ledger database...
+              </div>
+            )}
           </div>
         )}
       </main>
