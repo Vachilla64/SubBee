@@ -27,7 +27,7 @@ const worker = new Worker(
 
     console.log(`[worker/card] Processing card webhook job ${job.id} for event ${eventId}`);
 
-    if (eventType !== 'card.transaction.success') {
+    if (eventType !== 'naira_card_credit_event.successful') {
       console.log(`[worker/card] Ignoring unhandled event type: ${eventType}`);
       return;
     }
@@ -37,8 +37,8 @@ const worker = new Worker(
       return;
     }
 
-    // Convert Naira amount from webhook payload back to BIGINT kobo
-    const amountKobo = Math.round(amount * 100);
+    // The amount in Bridgecard's webhook payload is already in Kobo
+    const amountKobo = Math.round(Number(amount));
 
     // ── Step 1: Open DB Transaction ──────────────────────────────────────────
     await db.transaction(async (client) => {

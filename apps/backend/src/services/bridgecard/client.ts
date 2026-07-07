@@ -38,9 +38,9 @@ class BridgecardClient {
 
   constructor() {
     this.baseURL = config.BRIDGECARD_BASE_URL;
-    this.token = config.BRIDGECARD_TOKEN;
     this.secretKey = config.BRIDGECARD_SECRET_KEY;
-    this.mockMode = !this.token || !this.secretKey;
+    this.token = config.BRIDGECARD_TOKEN;
+    this.mockMode = false; // We use actual sandbox APIs for M2
 
     if (this.mockMode) {
       console.log('[bridgecard/client] ℹ️ API credentials missing. Initializing in MOCK MODE.');
@@ -242,12 +242,13 @@ class BridgecardClient {
       setTimeout(async () => {
         try {
           const webhookPayload = {
-            event: 'card_credit_event.successful',
+            event: 'naira_card_credit_event.successful',
             data: {
               card_id: cardId,
               transaction_reference: _reference,
               amount: amountKobo,
-              currency: 'NGN'
+              currency: 'NGN',
+              status: 'success'
             }
           };
 
@@ -269,7 +270,7 @@ class BridgecardClient {
     }
 
     // API docs: amount is in kobo, no transaction_reference field on this endpoint
-    const response = await fetch(`${this.baseURL}/naira_cards/fund_card`, {
+    const response = await fetch(`${this.baseURL}/naira_cards/fund_naira_card`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({
