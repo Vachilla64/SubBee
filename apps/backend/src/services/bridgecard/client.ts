@@ -300,6 +300,44 @@ class BridgecardClient {
     await this.handleResponse<unknown>(response, 'fundIssuingWallet');
   }
 
+  // Get Issuing Wallet Balance
+  // GET /issuing_wallet?currency=NGN
+  async getIssuingWalletBalance(): Promise<number> {
+    if (this.mockMode) {
+      console.log('[bridgecard/client] [MOCK] Fetching issuing wallet balance');
+      return 15000000; // Mock ₦150,000 balance
+    }
+
+    const response = await fetch(`${this.baseURL}/issuing_wallet?currency=NGN`, {
+      method: 'GET',
+      headers: this.getHeaders()
+    });
+
+    const result = await this.handleResponse<{ data: { balance: number } }>(response, 'getIssuingWalletBalance');
+    return result.data.balance || 0;
+  }
+
+  // Unload Virtual Card (Sweep-back)
+  // POST /naira_cards/unload_naira_card
+  async unloadVirtualCard(cardId: string, amountKobo: number): Promise<boolean> {
+    if (this.mockMode) {
+      console.log('[bridgecard/client] [MOCK] Triggering unload virtual card request:', { cardId, amountKobo });
+      return true;
+    }
+
+    const response = await fetch(`${this.baseURL}/naira_cards/unload_naira_card`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({
+        card_id: cardId,
+        amount: amountKobo
+      })
+    });
+
+    await this.handleResponse<unknown>(response, 'unloadVirtualCard');
+    return true;
+  }
+
   // Private helpers
   private getHeaders(): Record<string, string> {
     // Docs confirm: header key is 'token', value is 'Bearer <token>'

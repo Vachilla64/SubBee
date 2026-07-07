@@ -58,3 +58,29 @@ export const schedulerQueue = new Queue('scheduler-queue', {
 
 console.log('[queue] Scheduler queue initialized.');
 
+// Initialize the invariant queue for trust layer checks
+export const invariantQueue = new Queue('invariant-queue', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    removeOnComplete: true,
+    removeOnFail: 100,
+  },
+});
+
+console.log('[queue] Invariant queue initialized.');
+
+// Initialize the reconciliation queue for float monitoring and sweep-backs
+export const reconciliationQueue = new Queue('reconciliation-queue', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+    removeOnComplete: true,
+    removeOnFail: 100,
+  },
+});
+
+console.log('[queue] Reconciliation queue initialized.');

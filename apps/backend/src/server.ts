@@ -7,13 +7,14 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import crypto from 'crypto';
 import { db } from './db';
-import { cardQueue, schedulerQueue } from './workers/queue';
+import { cardQueue, schedulerQueue, invariantQueue, reconciliationQueue } from './workers/queue';
 import { bridgecard } from './services/bridgecard/client';
 
 // Import workers to ensure they register and start listening to Redis
 import './workers/deposit.worker';
 import './workers/card.worker';
 import './workers/scheduler.worker';
+import './workers/reconciliation.worker';
 import { bot } from './telegram/bot';
 import nombaWebhookRouter from './webhooks/nomba';
 import { createNombaVirtualAccount } from './services/nomba/accounts';
@@ -661,22 +662,31 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 async function bootstrapScheduler() {
   try {
     // Clear any existing repeatable jobs to avoid duplicates
-    const repeatableJobs = await schedulerQueue.getRepeatableJobs();
-    for (const job of repeatableJobs) {
-      await schedulerQueue.removeRepeatableByKey(job.key);
-    }
+    const schedJobs = await schedulerQueue.getRepeatableJobs();
+    for (const job of schedJobs) await schedulerQueue.removeRepeatableByKey(job.key);
+
+    const invJobs = await invariantQueue.getRepeatableJobs();
+    for (const job of invJobs) await invariantQueue.removeRepeatableByKey(job.key);
+
+    const recJobs = await reconciliationQueue.getRepeatableJobs();
+    for (const job of recJobs) await reconciliationQueue.removeRepeatableByKey(job.key);
 
     // Schedule daily sweep at 8:00 AM
-    await schedulerQueue.add(
-      'daily-subscription-sweep',
-      {},
-      {
-        repeat: {
-          pattern: '0 8 * * *',
-        },
-      }
-    );
+    await schedulerQueue.add('daily-subscription-sweep', {}, { repeat: { pattern: '0 8 * * *' } });
     console.log('[server] Daily subscription sweep repeatable job scheduled.');
+
+    // M4: Invariants (every 10 minutes)
+    await invariantQueue.add('invariant-check', {}, { repeat: { pattern: '*/10 * * * *' } });
+    console.log('[server] Invariant check repeatable job scheduled.');
+
+    // M4: Float Monitor (hourly)
+    await reconciliationQueue.add('float-monitor', {}, { repeat: { pattern: '0 * * * *' } });
+    console.log('[server] Float monitor repeatable job scheduled.');
+
+    // M4: Sweep-back (nightly at 2:00 AM)
+    await reconciliationQueue.add('sweep-back', {}, { repeat: { pattern: '0 2 * * *' } });
+    console.log('[server] Sweep-back repeatable job scheduled.');
+
   } catch (err) {
     console.error('[server] Failed to bootstrap repeatable scheduler job:', err);
   }
@@ -694,7 +704,7 @@ app.listen(PORT, () => {
 │    POST /webhooks/nomba                          │
 │    POST /webhooks/bridgecard  (skeleton)         │
 │                                                  │
-│  Milestone: M3 — Subscription Loop               │
+│  Milestone: M4 — Trust Layer                     │
 └─────────────────────────────────────────────────┘
   `);
 
