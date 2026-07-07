@@ -1,0 +1,245 @@
+# Bridgecard Issuing API — Complete Research Summary
+
+Here is everything gathered from the Bridgecard docs. All endpoints are confirmed from multiple doc sources.
+
+---
+
+## Base URLs
+
+| Environment | Base URL |
+|---|---|
+| **Sandbox** | `https://issuecards.api.bridgecard.co/v1/issuing/sandbox` |
+| **Production** | `https://issuecards.api.bridgecard.co/v1/issuing` |
+
+All paths below are **suffixes** appended to the appropriate base URL.
+
+---
+
+## Required Headers (All Endpoints)
+
+```
+token: Bearer <your_api_token>
+Content-Type: application/json
+```
+
+- **Token source:** Dashboard API Keys tab — sandbox tokens are prefixed with `test`
+- There is **no `clientSecret` header** — the `clientSecret` / `secret_key` is only used **for PIN encryption** (AES-256) and **webhook signature verification** (AES decryption), not in HTTP headers directly.
+
+---
+
+## 1. Register Cardholder (KYC)
+
+### Option A — Synchronous (recommended for SubBee)
+```
+POST /cardholder/register_cardholder_synchronously
+```
+⚠️ Can take **up to 45 seconds** — increase request timeout accordingly.
+
+**Request Body (Nigeria — BVN):**
+```json
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "+2348122277789",
+  "email_address": "user@example.com",
+  "address": {
+    "address": "9 Jibowu Street",
+    "city": "Aba North",
+    "state": "Abia",
+    "country": "Nigeria",
+    "postal_code": "1000242",
+    "house_no": "13"
+  },
+  "identity": {
+    "id_type": "NIGERIAN_BVN_VERIFICATION",
+    "bvn": "22222222222222",
+    "selfie_image": "https://image.com"
+  },
+  "meta_data": {
+    "any_key": "any_value"
+  }
+}
+```
+
+**Alternative identity types:**
+- `NIGERIAN_NIN` → needs `id_image` + `selfie_image`
+- `NIGERIAN_DRIVERS_LICENSE` → needs `id_image` + `selfie_image`
+
+**Success Response** includes:
+```json
+{ "cardholder_id": "5ce48a0b4292499bbe3d23441a2a2d06" }
+```
+Store this `cardholder_id` — required for card creation.
+
+### Option B — Asynchronous
+```
+POST /cardholder/register_cardholder_asynchronously
+```
+Same body. Result comes via webhook instead of immediate response. Webhook event: `cardholder_verification.successful` or `cardholder_verification.failed`.
+
+---
+
+## 2. Create / Issue a Naira Virtual Card
+
+```
+POST /cards/create_card
+```
+
+**Request Body:**
+```json
+{
+  "cardholder_id": "5ce48a0b4292499bbe3d23441a2a2d06",
+  "card_type": "virtual",
+  "card_brand": "Mastercard",
+  "card_currency": "NGN",
+  "pin": "<AES256_ENCRYPTED_4_DIGIT_PIN>"
+}
+```
+
+**PIN Encryption (must be done server-side):**
+```javascript
+const AES256 = require('aes-everywhere');
+const encrypted = AES256.encrypt('1234', process.env.BRIDGECARD_SECRET_KEY);
+```
+- Use your dashboard **Secret Key** (NOT the API token) as the encryption key
+- Library: `aes-everywhere` (npm)
+
+**Success Response** includes a `card_id` — store this (along with `last4`).
+
+---
+
+## 3. Fund Issuing Wallet (Sandbox prerequisite before funding cards)
+
+**⚠️ CRITICAL for Sandbox:** You MUST fund the issuing wallet first before you can fund any cards. This is a sandbox-only step.
+
+```
+PATCH /cards/fund_issuing_wallet?currency=NGN
+```
+
+**Request Body:**
+```json
+{
+  "amount": "1000000"
+}
+```
+Amount is in **kobo** (₦1 = 100 kobo). `1000000` = ₦10,000.
+
+---
+
+## 4. Fund a Naira Card (programmatic top-up from issuing wallet)
+
+```
+POST /naira_cards/fund_card
+```
+(Note the `naira_cards` path segment — distinct from the generic `cards` path used for creation)
+
+**Request Body:**
+```json
+{
+  "card_id": "<card_id_from_create_response>",
+  "amount": 500000
+}
+```
+Amount is in **kobo**. Rate limited: once every 5 minutes per `card_id`.
+
+**Important:** Funding is async. You'll get an immediate accepted response. The actual credit is confirmed by the **`card_credit_event.successful`** webhook. Listen for that webhook before marking as funded.
+
+**Alternative funding (production reality):** Each Naira card is also tied to a virtual bank account. Users can fund it via bank transfer to that account — this happens in production without any API call needed.
+
+---
+
+## 5. Get Card Details
+
+**For non-sensitive data (card status, metadata):**
+```
+GET /cards/get_card_details?card_id=<card_id>
+```
+Base URL: `https://issuecards.api.bridgecard.co/v1/issuing/sandbox`
+
+**For sensitive decrypted data (PAN, expiry, CVV) — use Evervault Relay:**
+```
+GET https://issuecards-api-bridgecard-co.relay.evervault.com/v1/issuing/sandbox/cards/get_card_details?card_id=<card_id>
+```
+Production Relay: `https://issuecards-api-bridgecard-co.relay.evervault.com/v1/issuing/cards/get_card_details`
+
+**Response fields include:**
+- `last_4` — last 4 digits of PAN
+- `is_active` — boolean (frozen = false)
+- `is_deleted` — boolean
+- `balance` / `available_balance`
+- `expiry_month` / `expiry_year` (encrypted unless via relay)
+- `pin_3ds_activated`
+- `issuing_app_id`
+- `meta_data`
+
+⚠️ **Never store PAN/CVV.** Use relay for on-demand display only.
+
+---
+
+## 6. Get Card Balance
+
+```
+GET /naira_cards/get_card_balance?card_id=<card_id>
+```
+(Uses `naira_cards` path, not `cards`)
+
+Rate limited: once every 3 seconds per `card_id`.
+
+**Response fields:**
+- `balance` — total on card (incl. maintenance fee reserve)
+- `book_balance` — same as `balance`
+- `available_balance` — spendable amount (`balance` minus monthly maintenance fee)
+
+---
+
+## Webhook Security
+
+**Incoming header:** `x-webhook-signature`
+
+**Verification scheme:** AES-256 decrypt using your `test_webhook_secret_key`:
+```javascript
+const AES256 = require('aes-everywhere');
+const decrypted = AES256.decrypt(req.headers['x-webhook-signature'], process.env.BRIDGECARD_WEBHOOK_SECRET);
+// decrypted should equal your webhook_secret_key — if it does, event is authentic
+```
+
+**Key event types:**
+- `cardholder_verification.successful` / `.failed`
+- `card_credit_event.successful` / `.failed`
+- `card_debit_event.successful` / `.failed`
+
+**Webhook contract:** Return 200 immediately, enqueue processing — exactly as implemented in SubBee's AGENTS.md.
+
+---
+
+## Sandbox Setup Order (Required Steps)
+
+1. Get API token + secret key from dashboard
+2. Register cardholder (KYC) → get `cardholder_id`
+3. **Fund issuing wallet** → `PATCH /cards/fund_issuing_wallet?currency=NGN`
+4. Create card → `POST /cards/create_card` → get `card_id`
+5. Fund card → `POST /naira_cards/fund_card`
+6. Confirm via `card_credit_event.successful` webhook
+
+---
+
+## Env Variables Needed (confirm against AGENTS.md)
+
+```
+BRIDGECARD_BASE_URL=https://issuecards.api.bridgecard.co/v1/issuing/sandbox
+BRIDGECARD_TOKEN=<test_api_token_from_dashboard>
+BRIDGECARD_SECRET_KEY=<test_secret_key_from_dashboard>    # for AES PIN encryption
+BRIDGECARD_WEBHOOK_SECRET=<test_webhook_secret_key>       # for webhook AES verification
+```
+
+---
+
+## Key Gotchas for SubBee Integration
+
+1. **`naira_cards` vs `cards`** — card creation uses `/cards/create_card` but balance/fund uses `/naira_cards/...`. These are different path segments.
+2. **Amount in kobo everywhere** — consistent with SubBee's BIGINT kobo ledger. ₦1 = 100 kobo.
+3. **`fund_card` is async** — don't mark card as funded until the webhook fires. The `card_pending` state machine in AGENTS.md correctly handles this.
+4. **Issuing wallet must be pre-funded in sandbox** — this is a sandbox-only limitation; in production real money flows in.
+5. **Evervault relay for card details** — the regular endpoint returns encrypted blobs for sensitive fields. Use the relay URL if you ever need to display PAN (SubBee probably won't need this for the subscription use case).
+6. **PIN encryption key = secret key, NOT the API token** — two different credentials.
+7. **45-second timeout** on synchronous KYC — configure your HTTP client accordingly.

@@ -270,7 +270,7 @@ class BridgecardClient {
     }
 
     // API docs: amount is in kobo, no transaction_reference field on this endpoint
-    const response = await fetch(`${this.baseURL}/naira_cards/fund_naira_card`, {
+    const response = await fetch(`${this.baseURL}/naira_cards/fund_card`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({
@@ -308,13 +308,13 @@ class BridgecardClient {
       return 15000000; // Mock ₦150,000 balance
     }
 
-    const response = await fetch(`${this.baseURL}/issuing_wallet?currency=NGN`, {
+    const response = await fetch(`${this.baseURL}/cards/get_issuing_wallet_balance?currency=NGN`, {
       method: 'GET',
       headers: this.getHeaders()
     });
 
-    const result = await this.handleResponse<{ data: { balance: number } }>(response, 'getIssuingWalletBalance');
-    return result.data.balance || 0;
+    const result = await this.handleResponse<{ data: any }>(response, 'getIssuingWalletBalance');
+    return Number(result.data.balance ?? result.data.issuing_balance_NGN ?? result.data.issuing_balance_USD ?? 0);
   }
 
   // Unload Virtual Card (Sweep-back)

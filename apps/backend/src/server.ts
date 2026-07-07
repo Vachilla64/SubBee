@@ -620,6 +620,84 @@ app.delete('/api/subscriptions/:id', async (req: Request, res: Response) => {
   }
 });
 
+app.patch('/api/subscriptions/:id', async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const { isActive, amountNaira, billingDay, remindersEnabled } = req.body;
+
+  try {
+    const updates: string[] = [];
+    const values: any[] = [id];
+    let paramCount = 2;
+
+    if (isActive !== undefined) {
+      updates.push(`is_active = $${paramCount++}`);
+      values.push(isActive);
+    }
+    if (amountNaira !== undefined) {
+      updates.push(`amount_kobo = $${paramCount++}`);
+      values.push(Math.round(amountNaira * 100));
+    }
+    if (billingDay !== undefined) {
+      updates.push(`billing_day = $${paramCount++}`);
+      values.push(billingDay);
+    }
+    if (remindersEnabled !== undefined) {
+      updates.push(`reminders_enabled = $${paramCount++}`);
+      values.push(remindersEnabled);
+    }
+
+    if (updates.length === 0) {
+      res.status(400).json({ error: 'No fields to update' });
+      return;
+    }
+
+    const setClause = updates.join(', ');
+    await db.query(`UPDATE subscriptions SET ${setClause} WHERE id = $1`, values);
+    
+    res.json({ status: 'success' });
+  } catch (error: any) {
+    console.error('[api/subscriptions/patch] Error updating subscription:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/transactions', async (req: Request, res: Response) => {
+  const email = req.query.email as string;
+  if (!email) {
+    res.status(400).json({ error: 'Email is required' });
+    return;
+  }
+
+  try {
+    const userRes = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (userRes.rowCount === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    const user = userRes.rows[0];
+
+    // Query ledger_entries linked to the user's wallet
+    const txnsRes = await db.query(`
+      SELECT 
+        le.id, 
+        le.direction, 
+        le.amount as "amountKobo", 
+        le.source_type as "sourceType", 
+        le.created_at as "createdAt"
+      FROM ledger_entries le
+      JOIN ledger_accounts la ON le.account_id = la.id
+      WHERE la.user_id = $1 AND la.type = 'wallet'
+      ORDER BY le.created_at DESC
+      LIMIT 50
+    `, [user.id]);
+
+    res.json(txnsRes.rows);
+  } catch (error: any) {
+    console.error('[api/transactions] Error fetching transactions:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Debug Trigger Sweep Endpoint
 app.post('/api/debug/trigger-sweep', async (req: Request, res: Response) => {
   try {
