@@ -3,7 +3,8 @@ import Redis from 'ioredis';
 import { config } from '../config';
 
 // Initialize a shared Redis connection for all BullMQ queues and workers
-export const redisConnection = new Redis(config.REDIS_URL, {
+// Cast to 'any' to bypass strict version mismatch between BullMQ's internal ioredis types and ours
+export const redisConnection: any = new Redis(config.REDIS_URL, {
   // Prevent infinite reconnect loops hanging processes during shutdowns
   maxRetriesPerRequest: null,
 });
