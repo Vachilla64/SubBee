@@ -8,6 +8,10 @@ export const redisConnection = new Redis(config.REDIS_URL, {
   maxRetriesPerRequest: null,
 });
 
+redisConnection.on('error', (err) => {
+  console.error('[redis] Connection error:', err.message);
+});
+
 // Initialize the Nomba deposit queue
 export const depositQueue = new Queue('deposit-queue', {
   connection: redisConnection,
