@@ -19,6 +19,7 @@ import './workers/reconciliation.worker';
 import { bot } from './telegram/bot';
 import nombaWebhookRouter from './webhooks/nomba';
 import { createNombaVirtualAccount } from './services/nomba/accounts';
+import { fundVirtualCard } from './services/funding';
 
 let botUsername = 'SubBeeBot';
 bot.api.getMe().then((me) => {
