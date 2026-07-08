@@ -93,6 +93,22 @@ export const api = {
   },
 
   /**
+   * 5.1 DISCOVERY MODE (Unlock Card)
+   * ---------------------------------------------------------
+   * Call this to temporarily fund the card with a safety float
+   * so the user can bind it to Netflix, Spotify, etc., for auto-detection.
+   */
+  async unlockCard(email: string) {
+    const res = await fetch(`${API_BASE_URL}/card/unlock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  /**
    * 6. CARD MANAGEMENT (Freeze/Unfreeze/Reveal)
    * ---------------------------------------------------------
    * Use these for the card settings modal.
@@ -128,7 +144,7 @@ export const api = {
   async getSubscriptions(email: string) {
     const res = await fetch(`${API_BASE_URL}/subscriptions?email=${encodeURIComponent(email)}`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
     if (!res.ok) throw new Error(await res.text());
-    // Returns: Array of { id, merchantId, merchantName, amountKobo, billingDay, remindersEnabled, isActive }
+    // Returns: Array of { id, merchantId, merchantName, amountKobo, billingDay, remindersEnabled, isActive, isAutoDetected, needsConfirmation }
     return res.json();
   },
 

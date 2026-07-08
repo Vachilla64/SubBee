@@ -27,18 +27,69 @@ const worker = new Worker(
 
     console.log(`[worker/card] Processing card webhook job ${job.id} for event ${eventId}`);
 
-    if (eventType !== 'naira_card_credit_event.successful') {
+    if (eventType !== 'naira_card_credit_event.successful' && eventType !== 'transaction.successful') {
       console.log(`[worker/card] Ignoring unhandled event type: ${eventType}`);
       return;
     }
 
     if (status !== 'success') {
-      console.warn(`[worker/card] Card funding transaction status is not success: ${status}`);
+      console.warn(`[worker/card] Card transaction status is not success: ${status}`);
       return;
     }
 
     // The amount in Bridgecard's webhook payload is already in Kobo
     const amountKobo = Math.round(Number(amount));
+
+    // ── INTERCEPT: AUTO-DETECT SUBSCRIPTIONS (Discovery Mode) ───────────────
+    if (eventType === 'transaction.successful') {
+      console.log(`[worker/card] Detected a successful merchant charge. Auto-registering subscription...`);
+      
+      const merchantName = (payload.data as any).merchant_name || 'Unknown Merchant';
+      const cardId = payload.data.card_id;
+
+      // Find user who owns this card
+      const userRes = await db.query('SELECT user_id FROM virtual_cards WHERE card_id = $1', [cardId]);
+      if (userRes.rowCount === 0) {
+        console.warn(`[worker/card] Could not find user for card ${cardId}. Cannot auto-detect subscription.`);
+        return;
+      }
+      const userId = userRes.rows[0].user_id;
+
+      // Ensure we don't duplicate subscriptions for the same merchant
+      const existingSub = await db.query(
+        'SELECT id FROM subscriptions WHERE user_id = $1 AND merchant_name ILIKE $2', 
+        [userId, `%${merchantName}%`]
+      );
+
+      if (existingSub.rowCount === 0) {
+        const billingDay = new Date().getDate(); // Default billing day to today
+        
+        await db.query(
+          `INSERT INTO subscriptions (user_id, merchant_id, merchant_name, amount_kobo, billing_day, reminders_enabled, is_active, is_auto_detected, needs_confirmation) 
+           VALUES ($1, $2, $3, $4, $5, TRUE, TRUE, TRUE, TRUE)`,
+          [userId, `auto_${crypto.randomUUID()}`, merchantName, amountKobo, billingDay]
+        );
+
+        // Alert user
+        const telegramRes = await db.query('SELECT telegram_chat_id FROM users WHERE id = $1', [userId]);
+        const telegramChatId = telegramRes.rows[0]?.telegram_chat_id;
+        
+        if (telegramChatId) {
+          bot.api.sendMessage(
+            telegramChatId,
+            `🐝 *Subscription Detected!*\n\nWe noticed a ₦${(amountKobo / 100).toFixed(2)} charge from *${merchantName}*.\nWe've automatically added this to your subscriptions! Please visit the web dashboard to confirm the billing cycle.`,
+            { parse_mode: 'Markdown' }
+          ).catch(err => console.error(err));
+        }
+      }
+
+      // Mark webhook processed and exit (since we don't manipulate ledgers for raw Bridgecard debits yet in M1)
+      await db.query(
+        'UPDATE webhook_events SET processed_at = NOW() WHERE provider = $1 AND event_id = $2',
+        ['bridgecard', eventId]
+      );
+      return;
+    }
 
     // ── Step 1: Open DB Transaction ──────────────────────────────────────────
     await db.transaction(async (client) => {

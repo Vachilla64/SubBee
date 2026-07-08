@@ -52,23 +52,38 @@ const recWorker = new Worker(
     if (job.name === 'sweep-back') {
       console.log(`[worker/reconciliation] Running sweep-back for idle card funds...`);
       
-      // Find cards with a balance > 0
-      const cardsRes = await db.query(`
-        SELECT a.id as account_id, a.user_id, a.current_balance, c.card_id 
-        FROM ledger_accounts a
-        JOIN virtual_cards c ON a.user_id = c.user_id
-        WHERE a.type = 'card' AND a.current_balance > 0
-      `);
+      const targetUserId = job.data?.userId;
+
+      // Find cards with a balance > 0. If a targetUserId is provided, only check that user.
+      const query = targetUserId 
+        ? `SELECT a.id as account_id, a.user_id, a.current_balance, c.card_id 
+           FROM ledger_accounts a
+           JOIN virtual_cards c ON a.user_id = c.user_id
+           WHERE a.type = 'card' AND a.current_balance > 0 AND a.user_id = $1`
+        : `SELECT a.id as account_id, a.user_id, a.current_balance, c.card_id 
+           FROM ledger_accounts a
+           JOIN virtual_cards c ON a.user_id = c.user_id
+           WHERE a.type = 'card' AND a.current_balance > 0`;
+
+      const cardsRes = targetUserId 
+        ? await db.query(query, [targetUserId])
+        : await db.query(query);
 
       for (const cardAcc of cardsRes.rows) {
-        // Check if user has subscriptions due within the next 3 days
-        const dueRes = await db.query(`
-          SELECT id FROM subscriptions 
-          WHERE user_id = $1 AND next_billing_date <= NOW() + INTERVAL '3 days'
-        `, [cardAcc.user_id]);
+        let shouldSweep = true;
 
-        if (dueRes.rowCount === 0) {
-          // No upcoming subscriptions, safe to sweep back!
+        // If this is a general background sweep, check for upcoming subscriptions
+        if (!targetUserId) {
+          const dueRes = await db.query(`
+            SELECT id FROM subscriptions 
+            WHERE user_id = $1 AND next_billing_date <= NOW() + INTERVAL '3 days'
+          `, [cardAcc.user_id]);
+          if (dueRes.rowCount && dueRes.rowCount > 0) {
+            shouldSweep = false;
+          }
+        }
+
+        if (shouldSweep) {
           const amountKobo = Number(cardAcc.current_balance);
           const amountNaira = (amountKobo / 100).toFixed(2);
           console.log(`[worker/reconciliation] Sweeping ₦${amountNaira} back from card ${cardAcc.card_id} for user ${cardAcc.user_id}`);

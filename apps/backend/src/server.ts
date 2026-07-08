@@ -560,7 +560,38 @@ app.post('/api/card/reveal', async (req: Request, res: Response) => {
   }
 });
 
-// 10. Subscriptions Endpoint (CRUD)
+// 10. Discovery Mode Unlock
+app.post('/api/card/unlock', async (req: Request, res: Response) => {
+  const { email } = req.body;
+  if (!email) {
+    res.status(400).json({ error: 'Email is required' });
+    return;
+  }
+
+  try {
+    const user = await getUserByEmail(email);
+    
+    // Sweep ₦10,000 float to card
+    const floatAmountKobo = 1000000;
+    
+    // This throws if the user doesn't have a card or sufficient wallet balance
+    const { reference } = await fundVirtualCard(user.id, floatAmountKobo);
+
+    // Enqueue a delayed job to sweep back any idle funds after 30 minutes
+    await reconciliationQueue.add('sweep-back', { userId: user.id }, { delay: 30 * 60 * 1000 });
+
+    res.json({ 
+      status: 'success', 
+      message: 'Card unlocked for 30 minutes with ₦10,000 float.',
+      reference 
+    });
+  } catch (error: any) {
+    console.error('[api/card/unlock] Error unlocking card:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 11. Subscriptions Endpoint (CRUD)
 app.post('/api/subscriptions', async (req: Request, res: Response) => {
   const { email, merchantId, merchantName, amountNaira, billingDay, remindersEnabled } = req.body;
   if (!email || !merchantId || !merchantName || !amountNaira || !billingDay) {
