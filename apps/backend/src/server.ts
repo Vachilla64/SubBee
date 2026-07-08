@@ -555,7 +555,12 @@ app.post('/api/card/reveal', async (req: Request, res: Response) => {
 
   try {
     const details = await bridgecard.getCardSecureDetails(cardId);
-    res.json(details);
+    res.json({
+      card_number: details.pan,
+      cvv: details.cvv,
+      expiry_month: details.expiryMonth,
+      expiry_year: details.expiryYear
+    });
   } catch (error: any) {
     console.error('[api/card/reveal] Error revealing card details:', error);
     res.status(500).json({ error: error.message });
@@ -630,7 +635,7 @@ app.get('/api/subscriptions', async (req: Request, res: Response) => {
     const user = await getUserByEmail(email);
 
     const subsRes = await db.query(
-      'SELECT id, merchant_id as "merchantId", merchant_name as "merchantName", amount_kobo as "amountKobo", billing_day as "billingDay", reminders_enabled as "remindersEnabled", is_active as "isActive" FROM subscriptions WHERE user_id = $1',
+      'SELECT id, merchant_id as "merchantId", merchant_name as "merchantName", amount_kobo as "amountKobo", billing_day as "billingDay", reminders_enabled as "remindersEnabled", is_active as "isActive", is_auto_detected as "isAutoDetected", needs_confirmation as "needsConfirmation" FROM subscriptions WHERE user_id = $1',
       [user.id]
     );
 
