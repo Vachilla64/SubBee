@@ -9,7 +9,7 @@ export const redisConnection: any = new Redis(config.REDIS_URL, {
   maxRetriesPerRequest: null,
 });
 
-redisConnection.on('error', (err) => {
+redisConnection.on('error', (err: any) => {
   console.error('[redis] Connection error:', err.message);
 });
 
