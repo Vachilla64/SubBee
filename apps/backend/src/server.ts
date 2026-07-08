@@ -144,6 +144,7 @@ app.post(
 // Any route registered after this point gets parsed JSON in req.body.
 // Webhook routes above use express.raw() instead — they are unaffected.
 
+app.use(cors());
 app.use(express.json());
 
 // ─── User Facing API Routes (M2 & Frontend Integration) ──────────────────────
