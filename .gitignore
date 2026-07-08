@@ -29,7 +29,9 @@ pnpm-debug.log*
 *.tsbuildinfo
 
 # ─── Agent contracts (local-only) ────────────────────────────────────────────
-# AGENTS.md files are read by AI agents for project context.
+# AGENTS.md/CLAUDE.md files are read by AI agents for project context.
 # They live on disk but are never committed — keeps GitHub clean and prevents
 # accidental leaking of internal build instructions or credentials references.
 AGENTS.md
+CLAUDE.md
+.claude/
