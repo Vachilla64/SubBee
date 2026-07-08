@@ -1,13 +1,12 @@
-import { Queue, ConnectionOptions } from 'bullmq';
+import { Queue } from 'bullmq';
+import Redis from 'ioredis';
 import { config } from '../config';
 
-// Define the standard Redis connection options for all queues and workers
-export const redisConnection: ConnectionOptions = {
-  // Parse connection URL or connection details from config
-  url: config.REDIS_URL,
+// Initialize a shared Redis connection for all BullMQ queues and workers
+export const redisConnection = new Redis(config.REDIS_URL, {
   // Prevent infinite reconnect loops hanging processes during shutdowns
   maxRetriesPerRequest: null,
-};
+});
 
 // Initialize the Nomba deposit queue
 export const depositQueue = new Queue('deposit-queue', {
