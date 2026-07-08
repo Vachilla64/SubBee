@@ -1,17 +1,19 @@
 import { Queue } from 'bullmq';
-import Redis from 'ioredis';
 import { config } from '../config';
 
-// Initialize a shared Redis connection for all BullMQ queues and workers
-// Cast to 'any' to bypass strict version mismatch between BullMQ's internal ioredis types and ours
-export const redisConnection: any = new Redis(config.REDIS_URL, {
-  // Prevent infinite reconnect loops hanging processes during shutdowns
-  maxRetriesPerRequest: null,
-});
+const redisUrl = new URL(config.REDIS_URL);
 
-redisConnection.on('error', (err: any) => {
-  console.error('[redis] Connection error:', err.message);
-});
+// Parse the Redis URL into a raw options object.
+// We must do this instead of passing an ioredis instance because Railway's
+// duplicate dependency tree causes `instanceof Redis` to fail inside BullMQ,
+// which makes it silently default to localhost!
+export const redisConnection: any = {
+  host: redisUrl.hostname,
+  port: redisUrl.port ? parseInt(redisUrl.port, 10) : 6379,
+  username: redisUrl.username || undefined,
+  password: redisUrl.password || undefined,
+  maxRetriesPerRequest: null,
+};
 
 // Initialize the Nomba deposit queue
 export const depositQueue = new Queue('deposit-queue', {

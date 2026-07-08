@@ -199,7 +199,7 @@ app.post('/api/auth', async (req: Request, res: Response) => {
     res.json({ name: name || email.split('@')[0], email: user.email, id: user.id, kycStatus: user.kyc_status });
   } catch (error: any) {
     console.error('[api/auth] Error during authentication:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message || String(error) });
   }
 });
 

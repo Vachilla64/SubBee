@@ -8,6 +8,7 @@ const pool = new Pool({
   max: 20, // default max clients in pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
+  ssl: config.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
 });
 
 pool.on('error', (err) => {
