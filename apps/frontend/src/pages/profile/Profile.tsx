@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
+import { useState } from "react";
 import { useWalletData } from "../../lib/useWalletData";
+import { api } from "../../lib/api";
 
 const KYC_BADGE: Record<string, { label: string; className: string }> = {
   verified: {
@@ -26,6 +28,7 @@ export default function Profile() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { telegramConnected } = useWalletData();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const badge = KYC_BADGE[user?.kycStatus ?? "none"] ?? KYC_BADGE.none;
 
@@ -150,6 +153,28 @@ export default function Profile() {
             <path d="M21 12H9" />
           </svg>
           Log out
+        </button>
+
+        <button
+          onClick={async () => {
+            if (!user?.email) return;
+            if (confirm("Are you sure you want to delete your account? This will wipe all your test data permanently.")) {
+              setIsDeleting(true);
+              try {
+                await api.deleteAccount(user.email);
+                logout();
+                navigate("/welcome", { replace: true });
+              } catch (err) {
+                console.error("Failed to delete account:", err);
+                alert("Failed to delete account. Please try again.");
+                setIsDeleting(false);
+              }
+            }
+          }}
+          disabled={isDeleting}
+          className={`flex items-center justify-center gap-2 rounded-2xl border border-salmon-alertBorder bg-transparent py-3 text-[14.5px] font-extrabold text-salmon-text transition-opacity ${isDeleting ? "opacity-50" : "hover:bg-salmon-alertBg"}`}
+        >
+          {isDeleting ? "Deleting..." : "Delete Account"}
         </button>
       </div>
     </div>

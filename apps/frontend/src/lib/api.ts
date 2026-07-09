@@ -92,6 +92,14 @@ export const api = {
     return res.json();
   },
 
+  async deleteAccount(email: string) {
+    const res = await fetch(`${API_BASE_URL}/users?email=${encodeURIComponent(email)}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
   /**
    * 5.1 DISCOVERY MODE (Unlock Card)
    * ---------------------------------------------------------

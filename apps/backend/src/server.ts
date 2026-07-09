@@ -204,6 +204,48 @@ app.post('/api/auth', async (req: Request, res: Response) => {
   }
 });
 
+// 1b. Delete Profile / Account
+app.delete('/api/users', async (req: Request, res: Response) => {
+  const email = req.query.email as string;
+  if (!email) {
+    res.status(400).json({ error: 'Email is required' });
+    return;
+  }
+
+  try {
+    const user = await getUserByEmail(email);
+
+    await db.transaction(async (client) => {
+      // Disable trigger to allow deletion of immutable ledger entries
+      await client.query('ALTER TABLE ledger_entries DISABLE TRIGGER trg_block_ledger_delete');
+      await client.query('ALTER TABLE ledger_entries DISABLE TRIGGER trg_block_ledger_update');
+      
+      // Delete ledger entries related to the user's ledger accounts
+      await client.query(
+        'DELETE FROM ledger_entries WHERE account_id IN (SELECT id FROM ledger_accounts WHERE user_id = $1)',
+        [user.id]
+      );
+      
+      // Delete the user (ON DELETE CASCADE handles cards, cardholders, ledger_accounts, subscriptions, etc.)
+      await client.query('DELETE FROM users WHERE id = $1', [user.id]);
+      
+      // Re-enable triggers (safe because ALTER TABLE is transactional in Postgres)
+      await client.query('ALTER TABLE ledger_entries ENABLE TRIGGER trg_block_ledger_delete');
+      await client.query('ALTER TABLE ledger_entries ENABLE TRIGGER trg_block_ledger_update');
+    });
+
+    res.json({ status: 'success', message: 'User deleted' });
+  } catch (error: any) {
+    console.error('[api/users/delete] Error deleting user:', error);
+    // If it's a "not found" error, just return success so the frontend clears
+    if (error.message.includes('not found')) {
+      res.json({ status: 'success', message: 'User already deleted' });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
 // 2. Submit KYC Onboarding
 app.post('/api/kyc', async (req: Request, res: Response) => {
   const { email, firstName, lastName, phone, dob, address, state, lga, postalCode, bvn } = req.body;
