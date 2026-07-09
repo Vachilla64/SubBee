@@ -95,27 +95,20 @@ export default function Kyc() {
   };
 
   const startCeremony = async () => {
-    setCeremonyPhase('minting');
+    setCeremonyPhase('minting'); // Reuse 'minting' as 'reviewing' state
     setError(null);
     
     try {
-      // Fake delays to make the ceremony cinematic
-      await new Promise(r => setTimeout(r, 3000));
-      setCeremonyPhase('personalising');
-      
       const submitReq = api.submitKyc(user!.email, form);
       
-      await new Promise(r => setTimeout(r, 2000));
       await submitReq;
-      
       updateUser({ kycStatus: 'verified' });
       api.requestCard(user!.email, form.pin).catch(() => {});
       
-      setCeremonyPhase('boom');
-      
+      // Simulate waiting on the review screen so they see the new UI
       setTimeout(() => {
         navigate('/app/dashboard');
-      }, 4000);
+      }, 3500);
       
     } catch (err) {
       setCeremonyPhase('failed');
@@ -137,75 +130,95 @@ export default function Kyc() {
   const progressPercent = ((step - 1) / 3) * 100;
   
   if (ceremonyPhase !== 'none') {
+    const now = new Date();
+    const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#070b0c] transition-colors duration-1000">
-        
-        {/* White Flash for BOOM */}
-        <AnimatePresence>
-          {ceremonyPhase === 'boom' && (
-            <motion.div initial={{ opacity: 1 }} animate={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute inset-0 bg-white z-40 pointer-events-none" />
-          )}
-        </AnimatePresence>
+      <div className="fixed inset-0 z-50 flex flex-col bg-[#FAF3E1]">
+        <div className="app-shell-width mx-auto flex min-h-screen flex-col px-6 pb-8 pt-16">
+          
+          {ceremonyPhase === 'failed' ? (
+            <div className="flex flex-col items-center justify-center flex-1 text-center">
+               <div className="w-24 h-24 bg-salmon-bg2/30 rounded-full flex items-center justify-center mb-6">
+                 <span className="text-4xl">⚠️</span>
+               </div>
+               <h1 className="text-[28px] font-black tracking-tight text-ink">Verification Failed</h1>
+               <p className="mt-2 text-[15px] font-medium text-ink-muted">Please double-check your details and try again.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center flex-1">
+              {/* Mascot & Pill */}
+              <div className="mt-8 relative flex flex-col items-center">
+                <div className="h-[150px] w-[150px] rounded-full bg-gradient-to-b from-[#FCE9BA] to-[#FCE09B] flex items-center justify-center shadow-inner">
+                  <img src="/illustrations/bee-happy.png" alt="Happy Bee" className="w-[120px] object-contain translate-y-3 drop-shadow-md" />
+                </div>
+                <div className="mt-5 flex items-center gap-1.5 rounded-full bg-[#FCF3DF] px-3.5 py-1.5 shadow-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#D6A14A] animate-pulse"></span>
+                  <span className="text-[10.5px] font-black tracking-widest text-[#B58532] uppercase">Review in progress</span>
+                </div>
+              </div>
 
-        <motion.div
-          animate={
-            ceremonyPhase === 'minting' ? { rotateY: [0, 360], scale: 1.1 } :
-            ceremonyPhase === 'personalising' ? { rotateY: 0, scale: 1.15 } :
-            ceremonyPhase === 'boom' ? { scale: [1.15, 0.6, 1.3, 1] } :
-            ceremonyPhase === 'failed' ? { x: [-15, 15, -10, 10, 0] } : {}
-          }
-          transition={{ 
-            rotateY: { repeat: Infinity, duration: 2, ease: "linear" },
-            scale: { duration: 0.5, type: 'spring' }
-          }}
-          className={`relative h-[220px] w-[340px] rounded-2xl overflow-hidden shadow-2xl transition-all duration-1000
-            ${ceremonyPhase === 'failed' ? 'grayscale opacity-50' : ''}
-            ${ceremonyPhase === 'personalising' || ceremonyPhase === 'boom' ? 'shadow-[0_0_80px_rgba(231,184,79,0.3)]' : ''}
-          `}
-          style={{
-            background: 'linear-gradient(150deg, #2E6264 0%, #1C4042 52%, #143032 100%)',
-            filter: `blur(${blurAmount})`,
-            transition: 'filter 2s ease-out'
-          }}
-        >
-          {/* Card internals (Mastercard, Text, Chip) */}
-          <div className="absolute inset-0 p-5 flex flex-col justify-between">
-            <div className="flex justify-between items-start">
-              <span className="text-[14px] font-extrabold tracking-wide text-white/90">SUBBEE</span>
-              <div className="flex">
-                <div className="w-8 h-8 rounded-full bg-[#EB001B] opacity-90 mix-blend-multiply"></div>
-                <div className="w-8 h-8 rounded-full bg-[#F79E1B] opacity-90 mix-blend-multiply -ml-3"></div>
+              {/* Headings */}
+              <div className="mt-8 text-center">
+                <h1 className="text-[26px] font-black tracking-tight text-ink">We're reviewing your ID</h1>
+                <p className="mt-3 text-[14px] font-semibold leading-relaxed text-ink-muted px-4">
+                  Verification usually takes a few minutes.<br/>
+                  You can close the app — we'll notify you<br/>
+                  the moment it's done.
+                </p>
+              </div>
+
+              {/* Timeline Card */}
+              <div className="mt-8 w-full rounded-3xl bg-white p-6 shadow-[0_8px_30px_rgba(20,40,45,0.04)]">
+                <div className="relative">
+                  {/* Vertical Line */}
+                  <div className="absolute left-[11px] top-[14px] bottom-[14px] w-[2px] bg-[#EAE7DF]" />
+                  
+                  {/* Step 1 */}
+                  <div className="relative flex items-start gap-4 mb-7">
+                    <div className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal text-white ring-[3px] ring-white">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-black text-ink leading-none">Details submitted</div>
+                      <div className="mt-1 text-[11.5px] font-bold text-ink-muted">Today - {timeStr}</div>
+                    </div>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="relative flex items-start gap-4 mb-7">
+                    <div className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white ring-2 ring-[#E7C97E]">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#E7C97E] animate-ping" />
+                    </div>
+                    <div className="-mt-0.5">
+                      <div className="text-[13px] font-black text-ink leading-none">Verifying identity</div>
+                      <div className="mt-1 text-[11.5px] font-bold text-[#B58532]">In progress...</div>
+                    </div>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="relative flex items-start gap-4">
+                    <div className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#EAE7DF] ring-[3px] ring-white">
+                      <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                    </div>
+                    <div className="-mt-0.5">
+                      <div className="text-[13px] font-black text-[#A0A6A8] leading-none">Wallet activated</div>
+                      <div className="mt-1 text-[11.5px] font-bold text-[#BEC3C4]">Card & deposit account unlock</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-auto mb-6 w-full flex flex-col items-center">
+                <div className="mb-4 flex items-center gap-1.5 text-[11.5px] font-bold text-[#A0A6A8]">
+                  <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-8.27l5.67-5.67"/></svg>
+                  Checking automatically every few seconds
+                </div>
+                <Button fullWidth onClick={() => navigate('/app/dashboard')} className="!h-14 !bg-[#B6D5D6] !text-[#1C4042] hover:!bg-[#A8CACB] !text-[16px]">
+                  Notify me & close
+                </Button>
               </div>
             </div>
-            
-            <div className="mt-2 w-12 h-9 rounded bg-gradient-to-br from-[#E7C97E] to-[#C9A545] border border-[#f3d994] opacity-90"></div>
-            
-            <div className="mt-4 font-mono text-[22px] tracking-[4px] text-white/95">
-              {(ceremonyPhase === 'personalising' || ceremonyPhase === 'boom') ? '5412 7512 3412 4092' : '•••• •••• •••• 4092'}
-            </div>
-            
-            <div className="flex justify-between items-end">
-              <div className="text-[13px] font-bold text-white uppercase tracking-widest">{form.firstName} {form.lastName}</div>
-              <div className="text-[11px] font-bold text-white/80">12/28</div>
-            </div>
-          </div>
-          
-          {/* Shimmer sweep effect */}
-          {ceremonyPhase === 'personalising' && (
-            <motion.div
-              initial={{ y: '100%' }} animate={{ y: '-100%' }} transition={{ duration: 1.5, ease: 'easeInOut' }}
-              className="absolute inset-0 bg-gradient-to-t from-transparent via-white/40 to-transparent w-full h-[200%]"
-            />
           )}
-        </motion.div>
-        
-        <div className="mt-12 h-8">
-          <AnimatePresence mode="wait">
-            {ceremonyPhase === 'minting' && <motion.div key="m" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="text-[#E7DFCC] font-mono tracking-widest text-sm">Minting your card...</motion.div>}
-            {ceremonyPhase === 'personalising' && <motion.div key="p" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="text-gold font-mono tracking-widest text-sm">Personalising...</motion.div>}
-            {ceremonyPhase === 'boom' && <motion.div key="b" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="text-white font-black text-2xl tracking-tight">Your SubBee Card is live. 🐝</motion.div>}
-            {ceremonyPhase === 'failed' && <motion.div key="f" initial={{opacity:0}} animate={{opacity:1}} className="text-salmon-text font-bold">Verification Failed.</motion.div>}
-          </AnimatePresence>
         </div>
       </div>
     );
