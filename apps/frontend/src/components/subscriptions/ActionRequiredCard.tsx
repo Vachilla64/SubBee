@@ -56,8 +56,17 @@ export default function ActionRequiredCard({
         <div className="tabular-nums text-lg font-extrabold tracking-[2px] text-ink">{accountNumber ?? 'Pending'}</div>
       </div>
       <div className="mt-2.5 flex gap-2">
-        <Button variant="secondary" fullWidth onClick={copyAccount} className="!py-2.5 !text-[13px]">
-          {copied ? 'Copied ✓' : 'Copy Account'}
+        <Button variant="secondary" fullWidth onClick={copyAccount} className="!py-2.5 !text-[13px] flex items-center justify-center gap-1.5">
+          {copied ? 'Copied ✓' : (
+            <>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A7C4C7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                <path d="M2 14l1.48-1.48C3.96 11.47 5.06 10.8 6.5 10.8c.28 0 .55.03.82.08"/>
+                <path d="M12 15l-3-3"/>
+              </svg>
+              Copy Account Number
+            </>
+          )}
         </Button>
         <Button variant="primary" fullWidth onClick={onTopUp} className="!py-2.5 !text-[13px] shadow-none">
           Top Up Wallet

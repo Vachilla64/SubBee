@@ -6,6 +6,7 @@ import { formatNaira, isUserFacingTransaction, transactionLabel } from '../../li
 import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
 import { SkeletonRows } from '../../components/ui/Skeleton';
+import { motion } from 'framer-motion';
 
 export interface Transaction {
   id: string;
@@ -54,26 +55,28 @@ export default function TransactionHistory() {
     <div>
       <div className="teal-card-gradient rounded-b-[26px] pb-4 pt-6">
         <div className="flex items-center justify-between px-5">
-          <button
-            onClick={() => navigate('/app/dashboard')}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-xl bg-white/10"
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => navigate(-1)}
+            className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20 active:bg-white/25"
           >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#EAF3F0" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 18l-6-6 6-6" />
             </svg>
-          </button>
+          </motion.button>
           <div className="flex flex-col items-center gap-0.5">
             <img src="/illustrations/subbee-logo.png" alt="" className="h-7 w-8 object-contain" />
             <span className="text-[19px] font-black tracking-tight text-gold-light">Activity</span>
           </div>
-          <button
+          <motion.button
+            whileTap={{ scale: 0.9 }}
             onClick={() => navigate('/app/activity/fund')}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-xl bg-white/10"
+            className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20 active:bg-white/25"
           >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#EAF3F0" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
-          </button>
+          </motion.button>
         </div>
       </div>
 

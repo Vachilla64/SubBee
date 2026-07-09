@@ -113,8 +113,8 @@ export default function CardHome() {
         )}
 
         <div className="flex gap-2.5">
-          <Button variant="secondary" fullWidth onClick={() => navigate('/app/card/reveal')} className="flex-col !gap-1 !py-3 !text-[12.5px]">
-            Card Details
+          <Button variant="primary" fullWidth onClick={() => navigate('/app/activity/fund')} className="flex-col !gap-1 !py-3 !text-[12.5px]">
+            Top Up
           </Button>
           <Button
             variant={frozen ? 'primary' : 'caution'}
@@ -122,7 +122,10 @@ export default function CardHome() {
             onClick={toggleFreeze}
             className="flex-col !gap-1 !py-3 !text-[12.5px]"
           >
-            {frozen ? 'Unfreeze' : 'Freeze Card'}
+            {frozen ? 'Unfreeze' : 'Pause Sub'}
+          </Button>
+          <Button variant="secondary" fullWidth onClick={() => navigate('/app/card/reveal')} className="flex-col !gap-1 !py-3 !text-[12.5px]">
+            Card Details
           </Button>
         </div>
 

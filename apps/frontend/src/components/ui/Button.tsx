@@ -10,7 +10,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_CLASSES: Record<Variant, string> = {
   primary: 'gold-pill text-gold-text shadow-[0_6px_14px_-6px_rgba(207,154,68,0.7)]',
-  secondary: 'bg-teal-soft text-teal',
+  secondary: 'bg-teal text-white shadow-[0_6px_14px_-6px_rgba(28,64,66,0.7)]',
   caution: 'bg-salmon-bg2 text-salmon-text',
   ghost: 'bg-white text-ink border border-ink/10',
 };
