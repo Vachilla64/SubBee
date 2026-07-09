@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { DashboardIcon, ActivityIcon, ProfileIcon } from "./NavIcons";
+import { motion } from "framer-motion";
 
 const TABS = [
   {
@@ -73,14 +74,13 @@ export default function AppShell() {
                     className={`absolute ${isCenter ? "-top-3" : "top-1"} transition-all duration-300`}
                   >*/}
 
-                  <div
-                    className={`relative bottom-0 transition-all duration-300`}
+                  <motion.div
+                    whileTap={{ scale: 0.8, y: 1 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    className="relative bottom-0"
                   >
-                    <Icon
-                      active={active}
-                      // className={` ${label == "Acitivity" ? "size-xl" : ""} ${active ? "text-[#3B2C12]" : "text-[#8A7A55] opacity-80"}`}
-                    />
-                  </div>
+                    <Icon active={active} />
+                  </motion.div>
 
                   <span
                     className={`relative bottom-0 text-md font-extrabold tracking-wide transition-colors ${active ? "text-[#3B2C12]" : "text-[#8A7A55] opacity-80"}`}

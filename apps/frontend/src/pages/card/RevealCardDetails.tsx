@@ -65,7 +65,7 @@ export default function RevealCardDetails() {
             <Skeleton className="mt-6 h-6 w-52 !bg-white/10" />
           ) : (
             <div className="tabular-nums mt-[22px] text-xl font-extrabold tracking-[3px] text-white">
-              {phase === 'revealed' && details?.card_number ? details.card_number : `•••• •••• •••• ${card.last4 ?? '····'}`}
+              {phase === 'revealed' && details?.card_number ? details.card_number.replace(/(.{4})/g, '$1 ').trim() : `•••• •••• •••• ${card.last4 ?? '····'}`}
             </div>
           )}
 
