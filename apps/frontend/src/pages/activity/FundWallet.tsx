@@ -12,7 +12,7 @@ export default function FundWallet() {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const shortfallKobo = (location.state as { shortfallKobo?: number; merchantName?: string } | null)?.shortfallKobo;
+  const shortfallKobo = (location.state as { shortfallKobo?: bigint; merchantName?: string } | null)?.shortfallKobo;
   const merchantName = (location.state as { merchantName?: string } | null)?.merchantName;
 
   const { walletKobo, accountNumber, bankName, refetch } = useWalletData();

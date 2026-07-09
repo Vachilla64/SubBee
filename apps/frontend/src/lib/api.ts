@@ -12,6 +12,16 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api';
 
+function parseBigIntJSON(text: string) {
+  if (!text) return null;
+  return JSON.parse(text, (key, value) => {
+    if (key.endsWith('Kobo') && value !== null) {
+      return BigInt(value);
+    }
+    return value;
+  });
+}
+
 export const api = {
   /**
    * 1. AUTHENTICATION (Welcome Screen)
@@ -28,7 +38,7 @@ export const api = {
     });
     if (!res.ok) throw new Error(await res.text());
     // Returns: { id, name, email, kycStatus }
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   /**
@@ -45,7 +55,7 @@ export const api = {
     });
     if (!res.ok) throw new Error(await res.text());
     // Returns: { status: 'success', cardholderId: 'uuid' }
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   /**
@@ -59,7 +69,7 @@ export const api = {
     const res = await fetch(`${API_BASE_URL}/balance?email=${encodeURIComponent(email)}`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
     if (!res.ok) throw new Error(await res.text());
     // Returns: { balanceKobo, bankAccount: { bankName, accountNumber }, kycStatus, telegramConnected, telegramBotUsername }
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   /**
@@ -73,7 +83,7 @@ export const api = {
     const res = await fetch(`${API_BASE_URL}/card?email=${encodeURIComponent(email)}`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
     if (!res.ok) throw new Error(await res.text());
     // Returns: { status: 'active' | 'inactive' | 'frozen', cardId, last4, brand, balanceKobo }
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   /**
@@ -89,7 +99,7 @@ export const api = {
       body: JSON.stringify({ email, pin })
     });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   async deleteAccount(email: string) {
@@ -97,7 +107,7 @@ export const api = {
       method: 'DELETE'
     });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   /**
@@ -113,7 +123,7 @@ export const api = {
       body: JSON.stringify({ email })
     });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   /**
@@ -130,7 +140,7 @@ export const api = {
       body: JSON.stringify({ cardId })
     });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   async revealCardDetails(cardId: string) {
@@ -141,7 +151,7 @@ export const api = {
     });
     if (!res.ok) throw new Error(await res.text());
     // Returns raw Bridgecard secure data (card_number, cvv, expiry_month, expiry_year)
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   /**
@@ -153,7 +163,7 @@ export const api = {
     const res = await fetch(`${API_BASE_URL}/subscriptions?email=${encodeURIComponent(email)}`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
     if (!res.ok) throw new Error(await res.text());
     // Returns: Array of { id, merchantId, merchantName, amountKobo, billingDay, remindersEnabled, isActive, isAutoDetected, needsConfirmation }
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   // NOTE: amountNaira is expected here by the backend (it converts to Kobo internally)
@@ -164,7 +174,7 @@ export const api = {
       body: JSON.stringify(data)
     });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   // Use to Pause (isActive: false) or Resume (isActive: true)
@@ -175,13 +185,13 @@ export const api = {
       body: JSON.stringify(updates)
     });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   async deleteSubscription(id: string) {
     const res = await fetch(`${API_BASE_URL}/subscriptions/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   /**
@@ -193,7 +203,7 @@ export const api = {
     const res = await fetch(`${API_BASE_URL}/transactions?email=${encodeURIComponent(email)}`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
     if (!res.ok) throw new Error(await res.text());
     // Returns: Array of { id, direction ('credit'|'debit'), amountKobo, sourceType ('deposit'|'card_funding'|etc), createdAt }
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   /**
@@ -203,7 +213,7 @@ export const api = {
   async getDepositInfo(email: string) {
     const res = await fetch(`${API_BASE_URL}/deposit/info?email=${encodeURIComponent(email)}`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   async deposit(email: string, amountNaira: number) {
@@ -213,12 +223,12 @@ export const api = {
       body: JSON.stringify({ email, amountNaira })
     });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    return parseBigIntJSON(await res.text());
   },
 
   async getTrustMetrics() {
     const res = await fetch(`${API_BASE_URL}/ops/trust-metrics`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    return parseBigIntJSON(await res.text());
   }
 };

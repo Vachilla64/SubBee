@@ -29,7 +29,7 @@ export default function Dashboard() {
     .map((s) => ({ sub: s, date: nextChargeDate(s.billingDay) }))
     .sort((a, b) => a.date.getTime() - b.date.getTime());
   const nearest = withDates[0];
-  const nearestShort = nearest ? shortfallKobo(nearest.sub, walletKobo) : 0;
+  const nearestShort = nearest ? shortfallKobo(nearest.sub, walletKobo) : 0n;
 
   const previewSubs = subscriptions.slice(0, 3);
 
@@ -127,9 +127,9 @@ export default function Dashboard() {
 
         <BalancePanel
           loading={loading}
-          totalKobo={walletKobo + (card.balanceKobo ?? 0)}
+          totalKobo={walletKobo + (card.balanceKobo ?? 0n)}
           availableKobo={walletKobo}
-          reservedKobo={card.balanceKobo ?? 0}
+          reservedKobo={card.balanceKobo ?? 0n}
         />
 
         {!loading && <VirtualCardBlock status={card.status} balanceKobo={card.balanceKobo} last4={card.last4} />}
@@ -152,7 +152,7 @@ export default function Dashboard() {
                 </div>
               ) : !nearest ? (
                 <p className="mt-2 text-[12.5px] font-semibold text-ink-muted">Add a subscription to see upcoming charges here.</p>
-              ) : nearestShort > 0 ? (
+              ) : nearestShort > 0n ? (
                 <div className="mt-2.5">
                   <ActionRequiredCard
                     merchantName={nearest.sub.merchantName}

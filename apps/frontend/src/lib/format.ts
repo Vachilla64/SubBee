@@ -1,12 +1,13 @@
 export interface SubscriptionLike {
-  amountKobo: number;
+  amountKobo: bigint;
   billingDay: number;
   isActive: boolean;
 }
 
 /** Money always renders through here — never hand-format kobo inline. */
-export function formatNaira(kobo: number): string {
-  return '₦' + (kobo / 100).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export function formatNaira(kobo: bigint | number): string {
+  const num = typeof kobo === 'bigint' ? Number(kobo) : kobo;
+  return '₦' + (num / 100).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /** Next occurrence of a day-of-month billing date, rolling to next month if it's already passed. */
@@ -33,13 +34,14 @@ export function formatShortDate(date: Date): string {
  * bill amount. Checked per-row rather than cumulatively across all active subs, since the backend
  * has no reservation/allocation order to reason about.
  */
-export function shortfallKobo(sub: SubscriptionLike, walletBalanceKobo: number): number {
-  if (!sub.isActive) return 0;
-  return Math.max(0, sub.amountKobo - walletBalanceKobo);
+export function shortfallKobo(sub: SubscriptionLike, walletBalanceKobo: bigint): bigint {
+  if (!sub.isActive) return 0n;
+  const diff = sub.amountKobo - walletBalanceKobo;
+  return diff > 0n ? diff : 0n;
 }
 
-export function isInsufficientFunds(sub: SubscriptionLike, walletBalanceKobo: number): boolean {
-  return shortfallKobo(sub, walletBalanceKobo) > 0;
+export function isInsufficientFunds(sub: SubscriptionLike, walletBalanceKobo: bigint): boolean {
+  return shortfallKobo(sub, walletBalanceKobo) > 0n;
 }
 
 const SOURCE_TYPE_LABEL: Record<string, string> = {

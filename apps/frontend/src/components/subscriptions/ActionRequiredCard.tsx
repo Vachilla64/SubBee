@@ -11,9 +11,9 @@ export default function ActionRequiredCard({
   onTopUp,
 }: {
   merchantName: string;
-  billKobo: number;
-  walletKobo: number;
-  shortfallKobo: number;
+  billKobo: bigint;
+  walletKobo: bigint;
+  shortfallKobo: bigint;
   accountNumber: string | null;
   onTopUp: () => void;
 }) {

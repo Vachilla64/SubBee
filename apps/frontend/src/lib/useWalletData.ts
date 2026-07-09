@@ -6,7 +6,7 @@ export interface Subscription {
   id: string;
   merchantId: string;
   merchantName: string;
-  amountKobo: number;
+  amountKobo: bigint;
   billingDay: number;
   remindersEnabled: boolean;
   isActive: boolean;
@@ -17,12 +17,12 @@ export interface CardData {
   cardId?: string;
   last4?: string;
   brand?: string;
-  balanceKobo?: number;
+  balanceKobo?: bigint;
 }
 
 export interface WalletData {
   loading: boolean;
-  walletKobo: number;
+  walletKobo: bigint;
   card: CardData;
   subscriptions: Subscription[];
   accountNumber: string | null;
@@ -37,7 +37,7 @@ const POLL_MS = 60_000;
 export function useWalletData(): WalletData {
   const { user, updateUser } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [walletKobo, setWalletKobo] = useState(0);
+  const [walletKobo, setWalletKobo] = useState<bigint>(0n);
   const [card, setCard] = useState<CardData>({ status: 'inactive' });
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [accountNumber, setAccountNumber] = useState<string | null>(null);
@@ -54,7 +54,7 @@ export function useWalletData(): WalletData {
         api.getSubscriptions(user.email),
         api.getDepositInfo(user.email).catch(() => ({ accountNumber: null, bankName: null })),
       ]);
-      setWalletKobo(balance.balanceKobo ?? 0);
+      setWalletKobo(balance.balanceKobo ?? 0n);
       setTelegramConnected(!!balance.telegramConnected);
       if (balance.telegramBotUsername) setTelegramBotUsername(balance.telegramBotUsername);
       if (balance.kycStatus && balance.kycStatus !== user.kycStatus) updateUser({ kycStatus: balance.kycStatus });

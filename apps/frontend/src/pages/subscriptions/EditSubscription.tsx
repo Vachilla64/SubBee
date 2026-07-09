@@ -21,7 +21,7 @@ export default function EditSubscription() {
 
   useEffect(() => {
     if (!sub) return;
-    setAmount(String(sub.amountKobo / 100));
+    setAmount(String(Number(sub.amountKobo) / 100));
     setBillingDay(String(sub.billingDay));
     setReminders(sub.remindersEnabled);
   }, [sub?.id]);

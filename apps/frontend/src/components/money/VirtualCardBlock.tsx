@@ -10,7 +10,7 @@ export default function VirtualCardBlock({
   overlap = true,
 }: {
   status: CardStatus;
-  balanceKobo?: number;
+  balanceKobo?: bigint;
   last4?: string;
   overlap?: boolean;
 }) {

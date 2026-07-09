@@ -7,9 +7,9 @@ export default function BalancePanel({
   reservedKobo,
   loading,
 }: {
-  totalKobo: number;
-  availableKobo: number;
-  reservedKobo: number;
+  totalKobo: bigint;
+  availableKobo: bigint;
+  reservedKobo: bigint;
   loading?: boolean;
 }) {
   if (loading) {

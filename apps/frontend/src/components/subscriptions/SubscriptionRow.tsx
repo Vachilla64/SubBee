@@ -6,7 +6,7 @@ export interface SubscriptionRowData {
   id: string;
   merchantId: string;
   merchantName: string;
-  amountKobo: number;
+  amountKobo: bigint;
   isActive: boolean;
 }
 

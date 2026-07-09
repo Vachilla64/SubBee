@@ -145,6 +145,12 @@ app.post(
 // Webhook routes above use express.raw() instead — they are unaffected.
 
 app.use(cors());
+
+// Configure Express to serialize BigInt as string to prevent JSON.stringify errors
+app.set('json replacer', (_key: string, value: any) =>
+  typeof value === 'bigint' ? value.toString() : value
+);
+
 app.use(express.json());
 
 // ─── User Facing API Routes (M2 & Frontend Integration) ──────────────────────
