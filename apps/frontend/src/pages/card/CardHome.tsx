@@ -3,7 +3,6 @@ import TopBar from '../../components/layout/TopBar';
 import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
 import Skeleton from '../../components/ui/Skeleton';
-import ProgressBar from '../../components/ui/ProgressBar';
 import { useAuth } from '../../lib/auth';
 import { useWalletData } from '../../lib/useWalletData';
 import { api } from '../../lib/api';
