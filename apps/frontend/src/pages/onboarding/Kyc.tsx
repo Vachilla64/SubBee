@@ -6,46 +6,13 @@ import SelectField from "../../components/ui/SelectField";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../lib/auth";
 import { api } from "../../lib/api";
+import confetti from "canvas-confetti";
+
+import naijaStateLocalGovernment from 'naija-state-local-government';
 
 const NIGERIAN_STATES = [
   { value: "", label: "Select a state..." },
-  { value: "Abia", label: "Abia" },
-  { value: "Abuja", label: "Abuja (FCT)" },
-  { value: "Adamawa", label: "Adamawa" },
-  { value: "Akwa Ibom", label: "Akwa Ibom" },
-  { value: "Anambra", label: "Anambra" },
-  { value: "Bauchi", label: "Bauchi" },
-  { value: "Bayelsa", label: "Bayelsa" },
-  { value: "Benue", label: "Benue" },
-  { value: "Borno", label: "Borno" },
-  { value: "Cross River", label: "Cross River" },
-  { value: "Delta", label: "Delta" },
-  { value: "Ebonyi", label: "Ebonyi" },
-  { value: "Edo", label: "Edo" },
-  { value: "Ekiti", label: "Ekiti" },
-  { value: "Enugu", label: "Enugu" },
-  { value: "Gombe", label: "Gombe" },
-  { value: "Imo", label: "Imo" },
-  { value: "Jigawa", label: "Jigawa" },
-  { value: "Kaduna", label: "Kaduna" },
-  { value: "Kano", label: "Kano" },
-  { value: "Katsina", label: "Katsina" },
-  { value: "Kebbi", label: "Kebbi" },
-  { value: "Kogi", label: "Kogi" },
-  { value: "Kwara", label: "Kwara" },
-  { value: "Lagos", label: "Lagos" },
-  { value: "Nasarawa", label: "Nasarawa" },
-  { value: "Niger", label: "Niger" },
-  { value: "Ogun", label: "Ogun" },
-  { value: "Ondo", label: "Ondo" },
-  { value: "Osun", label: "Osun" },
-  { value: "Oyo", label: "Oyo" },
-  { value: "Plateau", label: "Plateau" },
-  { value: "Rivers", label: "Rivers" },
-  { value: "Sokoto", label: "Sokoto" },
-  { value: "Taraba", label: "Taraba" },
-  { value: "Yobe", label: "Yobe" },
-  { value: "Zamfara", label: "Zamfara" },
+  ...naijaStateLocalGovernment.states().map((state: string) => ({ value: state, label: state }))
 ];
 
 const formVariants = {
@@ -65,7 +32,7 @@ export default function Kyc() {
 
   // Ceremony State
   const [ceremonyPhase, setCeremonyPhase] = useState<
-    "none" | "minting" | "personalising" | "boom" | "failed"
+    "none" | "personalising" | "minting" | "revealing" | "boom" | "failed"
   >("none");
 
   // Micro-Animations
@@ -122,7 +89,7 @@ export default function Kyc() {
   };
 
   const startCeremony = async () => {
-    setCeremonyPhase("minting"); // Reuse 'minting' as 'reviewing' state
+    setCeremonyPhase("minting");
     setError(null);
 
     try {
@@ -132,10 +99,29 @@ export default function Kyc() {
       updateUser({ kycStatus: "verified" });
       api.requestCard(user!.email, form.pin).catch(() => {});
 
-      // Simulate waiting on the review screen so they see the new UI
+      // Play success sound
+      try {
+        const audio = new Audio('/assets/success.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+      } catch (e) {}
+
+      // Transition to revealing phase
+      setCeremonyPhase("revealing");
+      
       setTimeout(() => {
-        navigate("/app/dashboard");
-      }, 3500);
+        // Transition to boom phase
+        setCeremonyPhase("boom");
+        
+        // Fire confetti burst!
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#2E6264', '#E7C97E', '#1C4042', '#EB001B', '#F79E1B'],
+          zIndex: 9999
+        });
+      }, 3500); // Wait 3.5s for the choreograph to finish
     } catch (err: any) {
       let errorMessage = "We couldn't verify those details. Please double-check them.";
       try {
@@ -192,16 +178,142 @@ export default function Kyc() {
       <div className="fixed inset-0 z-50 flex flex-col bg-[#FAF3E1] overflow-y-auto">
         <div className="app-shell-width mx-auto flex min-h-screen flex-col px-6 pb-[30px] pt-[20px]">
           {ceremonyPhase === "failed" ? (
-            <div className="flex flex-col items-center justify-center flex-1 text-center">
-              <div className="w-24 h-24 bg-salmon-bg2/30 rounded-full flex items-center justify-center mb-6">
-                <span className="text-4xl">⚠️</span>
+            <div className="flex flex-col flex-1 w-full animate-in fade-in zoom-in duration-500">
+              {/* hero */}
+              <div className="flex flex-col items-center text-center mt-4">
+                <div className="relative w-[172px] h-[172px] flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle at 50% 45%, #FBEAE4, #F6D9CF 60%, rgba(246,217,207,0) 72%)' }}></div>
+                  <img src="/illustrations/bee-confused-right.png" alt="" className="w-[150px] h-[150px] object-contain relative" />
+                  <div className="absolute bottom-2 right-3.5 w-10 h-10 rounded-full bg-[#C6543F] flex items-center justify-center border-[3px] border-[#FAF3E1] shadow-[0_5px_12px_rgba(198,84,63,0.4)]">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                  </div>
+                </div>
+                <div className="text-[26px] font-black text-ink tracking-tight mt-3">We couldn't verify you</div>
+                <div className="text-[14.5px] font-semibold text-ink-muted leading-relaxed max-w-[290px] mt-1.5">
+                  {error || "Your details didn't match the records at your bank. It's usually a quick fix — check the points below and try again."}
+                </div>
               </div>
-              <h1 className="text-[28px] font-black tracking-tight text-ink">
-                Verification Failed
+
+              {/* reasons */}
+              <div className="mt-6 bg-white rounded-[22px] shadow-[0_4px_16px_rgba(20,40,45,0.05)] px-4.5 py-1.5">
+                <div className="flex items-start gap-3 py-3.5 border-b border-[#F0EDE5]">
+                  <div className="w-[30px] h-[30px] rounded-[10px] bg-[#FEF1EE] flex items-center justify-center shrink-0">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18"></path></svg>
+                  </div>
+                  <div>
+                    <div className="text-[14px] font-extrabold text-ink">Check your BVN or NIN</div>
+                    <div className="text-[12.5px] font-semibold text-ink-muted leading-[1.4]">Re-enter it carefully — one wrong digit will fail the match.</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 py-3.5 border-b border-[#F0EDE5]">
+                  <div className="w-[30px] h-[30px] rounded-[10px] bg-[#FEF1EE] flex items-center justify-center shrink-0">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path><path d="M12 8v4M12 16h.01"></path></svg>
+                  </div>
+                  <div>
+                    <div className="text-[14px] font-extrabold text-ink">Match your legal name</div>
+                    <div className="text-[12.5px] font-semibold text-ink-muted leading-[1.4]">Use the exact name registered with your bank.</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 py-3.5">
+                  <div className="w-[30px] h-[30px] rounded-[10px] bg-[#FEF1EE] flex items-center justify-center shrink-0">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                  </div>
+                  <div>
+                    <div className="text-[14px] font-extrabold text-ink">Retake your selfie</div>
+                    <div className="text-[12.5px] font-semibold text-ink-muted leading-[1.4]">Good light, no glasses or hat, face fully in frame.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-1" />
+
+              {/* CTAs */}
+              <div className="mt-8 flex flex-col items-stretch w-full pb-2">
+                <button 
+                  onClick={() => setCeremonyPhase("none")} 
+                  className="h-[58px] rounded-full text-[#3A2A0E] font-black text-[16px] shadow-[0_12px_22px_-10px_rgba(207,154,68,0.9)] flex items-center justify-center gap-2.5 transition-transform active:scale-95" 
+                  style={{ background: 'linear-gradient(165deg, #F2CE7C, #E7B84F 60%, #DFAE44)' }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3A2A0E" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"></path><path d="M21 3v5h-5"></path></svg>
+                  Try again
+                </button>
+                <button 
+                  onClick={() => window.open('mailto:support@subbee.com')} 
+                  className="mt-2 h-[52px] rounded-full bg-transparent text-[#6B7377] font-extrabold text-[14.5px] flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6B7377" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path><circle cx="12" cy="12" r="10"></circle></svg>
+                  Contact support
+                </button>
+              </div>
+            </div>
+          ) : ceremonyPhase === "revealing" ? (
+            <div className="fixed inset-0 bg-[#FDF7EC] z-50 flex items-center justify-center overflow-hidden">
+              <img src="/illustrations/meadow.png" alt="" className="absolute bottom-0 inset-x-0 w-full h-[250px] object-cover object-bottom" />
+              
+              <motion.div
+                initial={{ opacity: 0, y: 150, rotateX: 15, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1.1 }}
+                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                className="relative z-10 w-[290px] h-[180px] rounded-[20px] overflow-hidden shadow-2xl border border-white/20"
+                style={{ background: "linear-gradient(150deg, #2E6264 0%, #1C4042 52%, #143032 100%)" }}
+              >
+                {/* Gliding wipe glisten effect */}
+                <motion.div
+                  initial={{ left: "-150%" }}
+                  animate={{ left: "150%" }}
+                  transition={{ delay: 1, duration: 1.5, ease: "easeInOut" }}
+                  className="absolute inset-y-0 w-[150%] bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[-25deg] z-20 pointer-events-none"
+                />
+
+                <div className="p-4 flex flex-col h-full justify-between opacity-90 relative z-10">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[12px] font-extrabold tracking-wide text-white">SUBBEE</span>
+                    <div className="flex">
+                      <div className="w-7 h-7 rounded-full bg-[#EB001B] mix-blend-screen opacity-90"></div>
+                      <div className="w-7 h-7 rounded-full bg-[#F79E1B] mix-blend-screen opacity-90 -ml-3"></div>
+                    </div>
+                  </div>
+                  <div className="w-10 h-7 rounded bg-gradient-to-br from-[#E7C97E] to-[#C9A545]"></div>
+                  <div className="font-mono text-lg tracking-[3px] text-white">
+                    •••• •••• •••• 4092
+                  </div>
+                  <div className="flex justify-between items-end text-white text-[10px] font-bold tracking-wider uppercase">
+                    <span>{form.firstName || form.lastName ? `${form.firstName} ${form.lastName}` : "CARDHOLDER"}</span>
+                    <span>12/28</span>
+                  </div>
+                </div>
+
+                {/* Bee Stamp */}
+                <motion.div
+                  initial={{ scale: 3, opacity: 0, rotate: -30 }}
+                  animate={{ scale: 1, opacity: 1, rotate: -12 }}
+                  transition={{ delay: 1.8, type: "spring", stiffness: 400, damping: 15 }}
+                  className="absolute -right-5 -bottom-5 w-20 h-20 bg-[#E7B84F] rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.3)] border-[4px] border-white z-30"
+                >
+                  <img src="/illustrations/subbee-logo.png" alt="" className="w-11 h-11 object-contain translate-x-[-1px] translate-y-[-2px]" />
+                </motion.div>
+              </motion.div>
+            </div>
+          ) : ceremonyPhase === "boom" ? (
+            <div className="flex flex-col items-center justify-center flex-1 text-center w-full animate-in fade-in zoom-in duration-500">
+              <div className="relative w-[184px] h-[184px] flex items-center justify-center mt-8">
+                <div className="absolute inset-0 rounded-full bg-[#E5F3ED] animate-pulse"></div>
+                <img src="/illustrations/bee-peek.png" alt="" className="w-full h-full object-fill relative z-10 scale-110" />
+              </div>
+              <h1 className="text-[32px] font-black tracking-tight text-ink mt-6">
+                Welcome to the Hive!
               </h1>
-              <p className="mt-3 text-[15px] font-semibold text-salmon-text bg-salmon-alertBg border border-salmon-alertBorder px-4 py-3 rounded-xl max-w-sm">
-                {error || "Please double-check your details and try again."}
+              <p className="mt-3 text-[15px] font-semibold text-ink-muted max-w-xs leading-relaxed">
+                Your virtual Mastercard is locked, loaded, and ready to handle your subscriptions.
               </p>
+              <div className="mt-10 mb-4 flex flex-col w-full max-w-sm gap-3.5 px-2">
+                <Button onClick={() => navigate('/app/card')} className="!h-14 !text-[16px] !bg-teal text-white shadow-[0_12px_22px_-10px_rgba(46,98,100,0.8)] transition-transform hover:scale-[1.02] active:scale-95">
+                  See My Card Details
+                </Button>
+                <button onClick={() => navigate('/app/dashboard')} className="h-14 text-[14.5px] font-extrabold text-teal hover:bg-teal-soft/30 rounded-full transition-colors">
+                  Continue to Dashboard
+                </button>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center flex-1 w-full">
@@ -553,12 +665,18 @@ export default function Kyc() {
                       required
                       options={NIGERIAN_STATES}
                       value={form.state}
-                      onChange={(e) => set("state", e.target.value)}
+                      onChange={(e) => {
+                        set("state", e.target.value);
+                        set("lga", ""); // Reset LGA when state changes
+                      }}
                     />
-                    <TextField
+                    <SelectField
                       label="LGA"
                       required
-                      placeholder="Eti-Osa"
+                      options={[
+                        { value: "", label: "Select LGA..." },
+                        ...(naijaStateLocalGovernment.all().find((s: any) => s.state === form.state)?.lgas || []).map((lga: string) => ({ value: lga, label: lga }))
+                      ]}
                       value={form.lga}
                       onChange={(e) => set("lga", e.target.value)}
                     />

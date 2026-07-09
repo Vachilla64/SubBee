@@ -1,4 +1,4 @@
-type Status = 'active' | 'paused' | 'insufficient' | 'frozen' | 'inactive' | 'creating' | 'cancelled';
+type Status = 'active' | 'paused' | 'insufficient' | 'frozen' | 'inactive' | 'creating' | 'cancelled' | 'awaiting_card';
 
 const STATUS: Record<Status, { label: string; icon: string; className: string }> = {
   active: { label: 'ACTIVE', icon: '✓', className: 'bg-active-bg border-[1.5px] border-active-border text-active-text' },
@@ -8,6 +8,7 @@ const STATUS: Record<Status, { label: string; icon: string; className: string }>
   inactive: { label: 'INACTIVE', icon: '·', className: 'bg-paused-bg text-paused-text' },
   creating: { label: 'CREATING', icon: '…', className: 'bg-gold-light/40 text-gold-text' },
   cancelled: { label: 'CANCELLED', icon: '×', className: 'bg-paused-bg text-paused-text' },
+  awaiting_card: { label: 'AWAITING\nCARD', icon: '', className: 'bg-[#F1EEE7] text-[#8A7A55] text-center leading-[1.15]' },
 };
 
 export default function StatusChip({ status, className = '' }: { status: Status; className?: string }) {
@@ -19,6 +20,8 @@ export default function StatusChip({ status, className = '' }: { status: Status;
       {s.icon && <span>{s.icon}</span>}
       {status === 'insufficient' ? (
         <span>INSUFFICIENT<br />FUNDS</span>
+      ) : status === 'awaiting_card' ? (
+        <span>AWAITING<br />CARD</span>
       ) : (
         <span>{s.label}</span>
       )}

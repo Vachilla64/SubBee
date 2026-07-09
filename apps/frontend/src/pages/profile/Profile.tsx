@@ -164,9 +164,16 @@ export default function Profile() {
                 await api.deleteAccount(user.email);
                 logout();
                 navigate("/welcome", { replace: true });
-              } catch (err) {
+              } catch (err: any) {
                 console.error("Failed to delete account:", err);
-                alert("Failed to delete account. Please try again.");
+                let msg = "Failed to delete account. Please try again.";
+                try {
+                  const parsed = JSON.parse(err.message);
+                  if (parsed.error) msg = parsed.error;
+                } catch {
+                  // Ignore parse error, use generic message
+                }
+                alert(msg);
                 setIsDeleting(false);
               }
             }

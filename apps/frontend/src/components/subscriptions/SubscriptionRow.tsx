@@ -14,15 +14,17 @@ export default function SubscriptionRow({
   sub,
   insufficient,
   embedded,
+  awaitingCard,
 }: {
   sub: SubscriptionRowData;
   insufficient: boolean;
   /** When the row sits inside a combined card (e.g. above an inline Action Required panel),
    *  drop its own card chrome so we don't stack a white rounded shadow inside another. */
   embedded?: boolean;
+  awaitingCard?: boolean;
 }) {
   const navigate = useNavigate();
-  const status = insufficient ? 'insufficient' : sub.isActive ? 'active' : 'paused';
+  const status = awaitingCard ? 'awaiting_card' : insufficient ? 'insufficient' : sub.isActive ? 'active' : 'paused';
 
   return (
     <button

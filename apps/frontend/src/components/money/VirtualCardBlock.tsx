@@ -18,60 +18,27 @@ export default function VirtualCardBlock({
 
   if (status === "inactive") {
     return (
-      <button
-        onClick={() => navigate("/app/card")}
-        className={`teal-card-gradient relative block w-full overflow-hidden rounded-[22px] p-6 text-left text-[#E6EFEE] shadow-[0_18px_34px_-16px_rgba(10,30,30,0.85)] ${overlap ? "-mt-10" : ""}`}
-      >
-        <div className="relative z-10 flex flex-col">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] font-extrabold tracking-wide text-teal-soft3">
-              VIRTUAL CARD
-            </span>
-            <div className="flex h-8 w-12 items-center justify-center rounded-lg bg-white/10">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-teal-soft3/70"
-              >
-                <rect x="2" y="5" width="20" height="14" rx="2" />
-                <line x1="2" y1="10" x2="22" y2="10" />
-              </svg>
-            </div>
-          </div>
-          <p className="mt-4 text-[22px] font-black text-white leading-none">
-            No card yet
-          </p>
-          <p className="mt-3 text-[13px] font-medium leading-relaxed text-teal-softText">
-            A secure virtual Mastercard is created automatically when a
-            subscription needs one — or you can get yours right now.
-          </p>
-          <div className="mt-6">
-            <span className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-[#E7B84F] px-4 py-3.5 text-[14.5px] font-extrabold tracking-wide text-[#3B2C12] shadow-[0_4px_14px_rgba(231,184,79,0.25)] transition-transform hover:scale-[1.02]">
-              Get Virtual Card
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="opacity-80"
-              >
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
-            </span>
-          </div>
+      <div className={`relative flex flex-col items-center overflow-hidden rounded-[22px] border-2 border-dashed border-[#C4B58C] bg-[#F7F1E2] p-[22px] px-5 text-center ${overlap ? "-mt-4" : ""}`}>
+        <div className="flex h-10 w-[60px] items-center justify-center rounded-md border-2 border-dashed border-[#C4B58C]" style={{ background: 'repeating-linear-gradient(135deg,rgba(196,181,140,0.16) 0 6px,transparent 6px 12px)' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B49A55" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         </div>
-      </button>
+        <div className="mt-3 text-[16px] font-black text-ink tracking-tight">No virtual card yet</div>
+        <div className="mt-1.5 max-w-[250px] text-[12.5px] font-semibold leading-[1.45] text-[#8A7A55]">
+          Create a free virtual card so SubBee can pay your bills automatically the moment they're due.
+        </div>
+        <button
+          onClick={() => navigate("/app/card")}
+          className="mt-[14px] flex w-full items-center justify-center gap-2 rounded-full p-[13px] text-[14px] font-black text-[#3A2A0E] shadow-[0_10px_20px_-8px_rgba(197,148,64,0.75)] transition-transform active:scale-95"
+          style={{ background: 'linear-gradient(165deg,#F2CE7C,#E7B84F)' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3A2A0E" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+          Get a Card
+        </button>
+        <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-bold text-[#9AA3A6]">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9AA3A6" strokeWidth="2.4"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+          Takes under a minute · you'll set a card PIN
+        </div>
+      </div>
     );
   }
 

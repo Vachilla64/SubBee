@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../components/layout/TopBar';
-import Button from '../../components/ui/Button';
-import EmptyState from '../../components/ui/EmptyState';
+
 import SubscriptionRow from '../../components/subscriptions/SubscriptionRow';
 import ActionRequiredCard from '../../components/subscriptions/ActionRequiredCard';
 import { SkeletonRows } from '../../components/ui/Skeleton';
@@ -13,7 +12,7 @@ export default function SubscriptionsList() {
   const { loading, subscriptions, walletKobo, accountNumber } = useWalletData();
 
   return (
-    <div>
+    <div className="flex flex-col min-h-screen">
       <TopBar
         title="My Subscriptions"
         back
@@ -30,16 +29,24 @@ export default function SubscriptionsList() {
         }
       />
 
-      <div className="flex flex-col gap-2.5 px-5 pb-4">
+      <div className="flex-1 flex flex-col gap-2.5 px-5 pb-28">
         {loading ? (
           <SkeletonRows count={4} />
         ) : subscriptions.length === 0 ? (
-          <EmptyState
-            mascot="/illustrations/bee-waiting.png"
-            title="No subscriptions yet"
-            message="Add your first subscription and SubBee takes it from here."
-            cta={<Button onClick={() => navigate('/app/subscriptions/add')}>Add a subscription</Button>}
-          />
+          <div className="flex-1 bg-white rounded-[26px] shadow-[0_4px_16px_rgba(20,40,45,0.05)] flex flex-col items-center justify-center text-center px-[30px] py-[36px]">
+            <img src="/illustrations/bee-confused-right.png" alt="" className="w-[160px] h-[160px] object-contain drop-shadow-[0_10px_16px_rgba(20,40,45,0.12)]" />
+            <div className="text-[19px] font-black text-ink mt-2">No subscriptions yet!</div>
+            <div className="text-[14px] font-semibold text-ink-muted leading-relaxed max-w-[250px] mt-1.5">
+              Add Netflix, Spotify, DStv or any recurring bill and SubBee keeps it paid on time.
+            </div>
+            <button 
+              onClick={() => navigate('/app/subscriptions/add')} 
+              className="mt-4.5 h-[52px] px-[26px] rounded-full text-[#3A2A0E] font-black text-[15px] shadow-[0_12px_22px_-10px_rgba(207,154,68,0.9)] transition-transform active:scale-95"
+              style={{ background: 'linear-gradient(165deg, #F2CE7C, #E7B84F 60%, #DFAE44)' }}
+            >
+              Add your first subscription
+            </button>
+          </div>
         ) : (
           subscriptions.map((sub) => {
             const insufficient = isInsufficientFunds(sub, walletKobo);

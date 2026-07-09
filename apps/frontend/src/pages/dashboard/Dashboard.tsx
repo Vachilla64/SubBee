@@ -134,68 +134,70 @@ export default function Dashboard() {
 
         {!loading && <VirtualCardBlock status={card.status} balanceKobo={card.balanceKobo} last4={card.last4} />}
 
-        <div className="relative mt-4.5 overflow-hidden rounded-card bg-white shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
-          <div className="relative z-10 pt-4 px-4.5 pb-12">
-            <div className="flex items-center justify-between">
-              <span className="text-[17px] font-extrabold text-ink">Upcoming Payments</span>
-              {nearest && (
-                <span className="rounded-full bg-[#F1EEE7] px-2.5 py-1 text-[11px] font-extrabold text-[#8A7A55]">
-                  T-{Math.max(0, daysUntil(nearest.date))} days
-                </span>
+        {!loading && card.status !== 'inactive' && (
+          <div className="relative mt-4.5 overflow-hidden rounded-card bg-white shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
+            <div className="relative z-10 pt-4 px-4.5 pb-12">
+              <div className="flex items-center justify-between">
+                <span className="text-[17px] font-extrabold text-ink">Upcoming Payments</span>
+                {nearest && (
+                  <span className="rounded-full bg-[#F1EEE7] px-2.5 py-1 text-[11px] font-extrabold text-[#8A7A55]">
+                    T-{Math.max(0, daysUntil(nearest.date))} days
+                  </span>
+                )}
+              </div>
+
+              {loading ? (
+                <div className="mt-3">
+                  <SkeletonRows count={1} />
+                </div>
+              ) : !nearest ? (
+                <p className="mt-2 text-[12.5px] font-semibold text-ink-muted">Add a subscription to see upcoming charges here.</p>
+              ) : nearestShort > 0 ? (
+                <div className="mt-2.5">
+                  <ActionRequiredCard
+                    merchantName={nearest.sub.merchantName}
+                    billKobo={nearest.sub.amountKobo}
+                    walletKobo={walletKobo}
+                    shortfallKobo={nearestShort}
+                    accountNumber={accountNumber}
+                    onTopUp={() =>
+                      navigate('/app/activity/fund', { state: { shortfallKobo: nearestShort, merchantName: nearest.sub.merchantName } })
+                    }
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="mt-1.5 flex items-center gap-1.5 text-[12.5px] font-bold text-active-text">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A8A5C" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    All upcoming subscriptions fully covered.
+                  </div>
+                  <div className="mt-3 flex items-center gap-3">
+                    <img
+                      src={`/icons/${nearest.sub.merchantId}.png`}
+                      alt=""
+                      onError={(e) => ((e.currentTarget as HTMLElement).style.visibility = 'hidden')}
+                      className="h-11 w-11 shrink-0 rounded-xl bg-ink/5 object-contain p-1"
+                    />
+                    <div className="flex-1">
+                      <div className="text-[15px] font-extrabold text-ink">{nearest.sub.merchantName}</div>
+                      <div className="text-[12.5px] font-semibold text-[#263339]">{formatShortDate(nearest.date)}</div>
+                    </div>
+                    <span className="tabular-nums text-base font-extrabold text-ink">{formatNaira(nearest.sub.amountKobo)}</span>
+                  </div>
+                </>
               )}
             </div>
-
-            {loading ? (
-              <div className="mt-3">
-                <SkeletonRows count={1} />
-              </div>
-            ) : !nearest ? (
-              <p className="mt-2 text-[12.5px] font-semibold text-ink-muted">Add a subscription to see upcoming charges here.</p>
-            ) : nearestShort > 0 ? (
-              <div className="mt-2.5">
-                <ActionRequiredCard
-                  merchantName={nearest.sub.merchantName}
-                  billKobo={nearest.sub.amountKobo}
-                  walletKobo={walletKobo}
-                  shortfallKobo={nearestShort}
-                  accountNumber={accountNumber}
-                  onTopUp={() =>
-                    navigate('/app/activity/fund', { state: { shortfallKobo: nearestShort, merchantName: nearest.sub.merchantName } })
-                  }
-                />
-              </div>
-            ) : (
-              <>
-                <div className="mt-1.5 flex items-center gap-1.5 text-[12.5px] font-bold text-active-text">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A8A5C" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                  All upcoming subscriptions fully covered.
-                </div>
-                <div className="mt-3 flex items-center gap-3">
-                  <img
-                    src={`/icons/${nearest.sub.merchantId}.png`}
-                    alt=""
-                    onError={(e) => ((e.currentTarget as HTMLElement).style.visibility = 'hidden')}
-                    className="h-11 w-11 shrink-0 rounded-xl bg-ink/5 object-contain p-1"
-                  />
-                  <div className="flex-1">
-                    <div className="text-[15px] font-extrabold text-ink">{nearest.sub.merchantName}</div>
-                    <div className="text-[12.5px] font-semibold text-[#263339]">{formatShortDate(nearest.date)}</div>
-                  </div>
-                  <span className="tabular-nums text-base font-extrabold text-ink">{formatNaira(nearest.sub.amountKobo)}</span>
-                </div>
-              </>
-            )}
+            <img
+              src="/illustrations/meadow.png"
+              alt=""
+              className="pointer-events-none absolute inset-x-0 -bottom-[60px] z-0 h-[209px] w-full object-cover object-bottom opacity-[0.92]"
+            />
           </div>
-          <img
-            src="/illustrations/meadow.png"
-            alt=""
-            className="pointer-events-none absolute inset-x-0 -bottom-[60px] z-0 h-[209px] w-full object-cover object-bottom opacity-[0.92]"
-          />
-        </div>
+        )}
 
-        <div className="mt-4.5 flex items-center justify-between px-1">
+        <div className={`flex items-center justify-between px-1 ${card.status === 'inactive' ? 'mt-7' : 'mt-4.5'}`}>
           <span className="text-[17px] font-extrabold text-ink">My Subscriptions</span>
           {subscriptions.length > 0 && (
             <button onClick={() => navigate('/app/subscriptions')} className="text-[13px] font-extrabold text-teal">
@@ -238,7 +240,12 @@ export default function Dashboard() {
                       variants={subItemVariants}
                       className={insufficient ? 'overflow-hidden rounded-[18px] bg-white shadow-[0_3px_12px_rgba(20,40,45,0.05)]' : ''}
                     >
-                      <SubscriptionRow sub={sub} insufficient={insufficient} embedded={insufficient} />
+                      <SubscriptionRow 
+                        sub={sub} 
+                        insufficient={insufficient} 
+                        embedded={insufficient} 
+                        awaitingCard={card.status === 'inactive'} 
+                      />
                       {insufficient && (
                         <div className="px-2.5 pb-2.5">
                           <ActionRequiredCard

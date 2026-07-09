@@ -35,3 +35,6 @@ pnpm-debug.log*
 AGENTS.md
 CLAUDE.md
 .claude/
+
+# ─── Testing ──────────────────────────────────────────────────────────────────
+__agent_tests__/

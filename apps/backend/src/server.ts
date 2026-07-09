@@ -18,7 +18,7 @@ import './workers/scheduler.worker';
 import './workers/reconciliation.worker';
 import { bot } from './telegram/bot';
 import nombaWebhookRouter from './webhooks/nomba';
-import { createNombaVirtualAccount } from './services/nomba/accounts';
+import { createNombaVirtualAccount, expireNombaVirtualAccount } from './services/nomba/accounts';
 import { fundVirtualCard } from './services/funding';
 
 let botUsername = 'SubBeeBot';
@@ -214,6 +214,40 @@ app.delete('/api/users', async (req: Request, res: Response) => {
 
   try {
     const user = await getUserByEmail(email);
+
+    // 1. Ensure the user has no funds before deleting
+    const balanceRes = await db.query(
+      'SELECT SUM(current_balance) as total_balance FROM ledger_accounts WHERE user_id = $1',
+      [user.id]
+    );
+    const totalBalance = parseInt(balanceRes.rows[0]?.total_balance || '0', 10);
+    
+    if (totalBalance > 0) {
+      res.status(400).json({ 
+        error: `Account has a remaining balance of ₦${(totalBalance / 100).toFixed(2)}. Please withdraw your funds before deleting.` 
+      });
+      return;
+    }
+
+    // 2. Freeze all Bridgecard virtual cards to halt fees and subscriptions
+    const cardsRes = await db.query("SELECT card_id FROM cards WHERE user_id = $1 AND provider = 'bridgecard'", [user.id]);
+    for (const row of cardsRes.rows) {
+      if (row.card_id) {
+        await bridgecard.freezeCard(row.card_id).catch(err => {
+          console.warn(`[api/users/delete] Failed to freeze card ${row.card_id}:`, err.message || err);
+        });
+      }
+    }
+
+    // 3. Deactivate Nomba static virtual accounts to stop incoming transfers
+    const vAccRes = await db.query("SELECT account_ref FROM virtual_accounts WHERE user_id = $1 AND provider = 'nomba'", [user.id]);
+    for (const row of vAccRes.rows) {
+      if (row.account_ref) {
+        await expireNombaVirtualAccount(row.account_ref).catch(err => {
+          console.warn(`[api/users/delete] Failed to expire nomba account ${row.account_ref}:`, err.message || err);
+        });
+      }
+    }
 
     await db.transaction(async (client) => {
       // Disable trigger to allow deletion of immutable ledger entries
