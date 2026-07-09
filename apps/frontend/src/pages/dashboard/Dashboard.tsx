@@ -37,7 +37,7 @@ export default function Dashboard() {
   // We add a delay so the subscriptions slide up exactly when the splash screen finishes clearing.
   const [isFirstLoad] = useState(() => !sessionStorage.getItem('subbee_splash_seen'));
 
-  const [pendingSubs, setPendingSubs] = useState<any[]>(() => {
+  const [pendingSubs] = useState<any[]>(() => {
     try {
       const stored = localStorage.getItem('subbee_pending_subs');
       return stored ? JSON.parse(stored) : [];
@@ -213,7 +213,7 @@ export default function Dashboard() {
           >
             {loading ? (
                 <SkeletonRows count={3} />
-              ) : previewSubs.length === 0 ? (
+              ) : previewSubs.length === 0 && pendingSubs.length === 0 ? (
                 <EmptyState
                   title="No subscriptions yet"
                   message="Add your first subscription and SubBee takes it from here."
@@ -222,7 +222,15 @@ export default function Dashboard() {
                   }
                 />
               ) : (
-                previewSubs.map((sub) => {
+                [...previewSubs, ...(previewSubs.length === 0 ? pendingSubs.map((p, i) => ({
+                  id: `pending-${i}`,
+                  merchantId: p.service_id,
+                  merchantName: p.service_name,
+                  amountKobo: p.amount,
+                  isActive: false,
+                  billingDay: 1,
+                  isPending: true
+                })) : [])].map((sub: any) => {
                   const insufficient = isInsufficientFunds(sub, walletKobo);
                   return (
                     <motion.div 
