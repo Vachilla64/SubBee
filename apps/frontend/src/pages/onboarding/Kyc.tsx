@@ -213,7 +213,7 @@ export default function Kyc() {
 
   return (
     <div className="min-h-screen bg-cream-bg flex flex-col">
-      <div className="app-shell-width mx-auto flex min-h-screen flex-col px-6 pb-8 pt-4">
+      <div className="app-shell-width mx-auto flex min-h-screen flex-col px-5 pb-8 pt-4">
         
         {/* Header */}
         <div className="flex items-center gap-3 relative z-10 mb-4">
