@@ -115,8 +115,13 @@ class BridgecardClient {
           console.log('[bridgecard/registerCardholder] Cardholder already exists, recovering gracefully:', errorData.data.cardholder_id);
           return errorData.data.cardholder_id;
         }
-      } catch {}
-      throw new Error(`[bridgecard/registerCardholder] API request failed: HTTP ${response.status}. Response: ${text}`);
+        if (errorData.message) {
+          throw new Error(errorData.message);
+        }
+      } catch (e: any) {
+        if (e.message !== text && !e.message.includes('Unexpected token')) throw e;
+      }
+      throw new Error(`Failed to verify identity. Please check your details and try again.`);
     }
 
     try {
@@ -155,10 +160,26 @@ class BridgecardClient {
       })
     });
 
-    const result = await this.handleResponse<{ data: { card_id: string; last_4: string; card_brand: string } }>(response, 'createVirtualCard');
+    const result = await this.handleResponse<{ data: { card_id: string; last_4?: string; card_brand?: string } }>(response, 'createVirtualCard');
+    
+    let actualLast4 = result.data.last_4 || '';
+    if (!actualLast4 || actualLast4 === '0000' || actualLast4.length < 4) {
+      try {
+        const details = await this.getCardSecureDetails(result.data.card_id);
+        if (details.pan && details.pan.length >= 4) {
+          actualLast4 = details.pan.slice(-4);
+        } else {
+          actualLast4 = '0000';
+        }
+      } catch (e) {
+        console.error('[bridgecard/client] Failed to fetch secure details for last4 fallback', e);
+        actualLast4 = '0000';
+      }
+    }
+
     return {
       cardId: result.data.card_id,
-      last4: result.data.last_4 || '0000',
+      last4: actualLast4,
       brand: result.data.card_brand || 'mastercard',
       status: 'active'
     };

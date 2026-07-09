@@ -139,16 +139,7 @@ export default function CardHome() {
           </span>
         </div>
 
-        <div className="rounded-[20px] bg-white p-4.5 shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
-          <div className="text-[15px] font-black tracking-tight text-ink">International Spending Headroom</div>
-          <div className="mt-0.5 text-[13px] font-bold text-[#6B7377]">
-            $850 used out of $1,600 monthly limit
-          </div>
-          <ProgressBar value={850} max={1600} className="mt-4" />
-          <div className="mt-1.5 flex justify-end text-[12.5px] font-bold text-ink-muted">
-            850/1600
-          </div>
-        </div>
+
       </div>
     </div>
   );
