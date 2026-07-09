@@ -32,13 +32,34 @@ import HelpSupport from './pages/profile/HelpSupport';
 import Legal from './pages/profile/Legal';
 import OpsDashboard from './pages/profile/OpsDashboard';
 
+import HiveSplashScreen from './components/layout/HiveSplashScreen';
+import { useState } from 'react';
+
 export default function App() {
   const { user, ready } = useAuth();
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('subbee_splash_seen'));
 
-  if (!ready) return null;
+  const handleSplashComplete = () => {
+    sessionStorage.setItem('subbee_splash_seen', 'true');
+    setShowSplash(false);
+  };
+
+  // If we haven't seen splash, we render it alongside the app.
+  // We pass `isLoading={!ready}` to the splash screen.
+  
+  if (!ready && !showSplash) return null; 
 
   return (
-    <Routes>
+    <>
+      {showSplash && (
+        <HiveSplashScreen 
+          isLoading={!ready} 
+          onComplete={handleSplashComplete} 
+        />
+      )}
+      
+      {ready && (
+        <Routes>
       <Route path="/welcome" element={user ? <Navigate to="/app/dashboard" replace /> : <SignUp />} />
       <Route path="/kyc" element={<Kyc />} />
       <Route path="/wallet-ready" element={<WalletReady />} />
@@ -75,5 +96,7 @@ export default function App() {
 
       <Route path="*" element={<Navigate to={user ? '/app/dashboard' : '/welcome'} replace />} />
     </Routes>
+      )}
+    </>
   );
 }

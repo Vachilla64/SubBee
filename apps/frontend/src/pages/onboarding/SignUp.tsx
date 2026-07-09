@@ -15,11 +15,23 @@ type SubscriptionOption = {
 };
 
 const SUBSCRIPTION_OPTIONS: SubscriptionOption[] = [
+  { id: 'youtube', name: 'YouTube Premium', icon: '/icons/youtube.png', price: 110000 },
+  { id: 'dstv', name: 'DSTV', icon: '/icons/dstv.png', price: 1660000 },
   { id: 'netflix', name: 'Netflix', icon: '/icons/netflix.png', price: 600000 },
   { id: 'spotify', name: 'Spotify', icon: '/icons/spotify.png', price: 170000 },
   { id: 'prime', name: 'Prime Video', icon: '/icons/amazon_prime.png', price: 280000 },
   { id: 'apple', name: 'Apple Music', icon: '/icons/apple.png', price: 150000 },
-  { id: 'dstv', name: 'DSTV', icon: '/icons/dstv.png', price: 1660000 }
+  { id: 'github', name: 'GitHub Copilot', icon: '/icons/github.png', price: 1000000 },
+  { id: 'linkedin', name: 'LinkedIn Premium', icon: '/icons/linkedin.png', price: 4000000 },
+  { id: 'openai', name: 'ChatGPT Plus', icon: '/icons/openai.png', price: 2000000 },
+  { id: 'zoom', name: 'Zoom Pro', icon: '/icons/zoom.png', price: 1500000 },
+  { id: 'play', name: 'Google Play', icon: '/icons/play.png', price: 100000 }
+];
+
+const GOALS = [
+  { id: 'never_miss', title: 'Never miss a bill payment again', icon: '🎯' },
+  { id: 'track_spend', title: 'Track exactly how much I spend', icon: '📊' },
+  { id: 'virtual_card', title: 'Get a secure virtual card', icon: '💳' },
 ];
 
 const variants = {
@@ -38,10 +50,12 @@ const variants = {
 };
 
 export default function SignUp() {
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
   const [direction, setDirection] = useState(1);
   const [mode, setMode] = useState<'signup' | 'login'>('signup');
-  const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set(['netflix', 'spotify'])); // SMART DEFAULTS
+  
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
+  const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set(['youtube', 'dstv'])); // SMART DEFAULTS
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -76,6 +90,19 @@ export default function SignUp() {
     setSubmitting(true);
     setError(null);
     try {
+      // 1. Save to local storage so Dashboard picks it up
+      const pendingSubs = Array.from(selectedSubs).map(id => {
+        const sub = SUBSCRIPTION_OPTIONS.find(s => s.id === id);
+        return {
+          service_id: id,
+          service_name: sub?.name,
+          icon_url: sub?.icon,
+          amount: sub?.price
+        };
+      });
+      localStorage.setItem('subbee_pending_subs', JSON.stringify(pendingSubs));
+
+      // 2. Perform actual login/signup
       const user = await login(name || email.split('@')[0], email);
       navigate(user.kycStatus === 'verified' ? '/app/dashboard' : '/kyc');
     } catch {
@@ -85,18 +112,23 @@ export default function SignUp() {
     }
   };
 
+  // Auto advance animation steps
   useEffect(() => {
-    if (step === 3 && mode === 'signup') {
-      const timer = setTimeout(() => {
-        paginate(4);
-      }, 2500);
-      return () => clearTimeout(timer);
+    if (mode === 'signup') {
+      if (step === 2) {
+        const timer = setTimeout(() => paginate(3), 2000);
+        return () => clearTimeout(timer);
+      }
+      if (step === 4) {
+        const timer = setTimeout(() => paginate(5), 2500);
+        return () => clearTimeout(timer);
+      }
     }
   }, [step, mode]);
 
   const renderProgressBar = () => {
     if (mode === 'login') return null;
-    const percentage = (step / 5) * 100;
+    const percentage = (step / 6) * 100;
     return (
       <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#EAE7DF]">
         <div 
@@ -160,18 +192,30 @@ export default function SignUp() {
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className="absolute inset-0 flex flex-col"
             >
-              <div className="text-center mt-12 flex-1">
-                <div className="mx-auto mb-6 h-28 w-28 rounded-full bg-teal/10 flex items-center justify-center">
-                  <span className="text-5xl">🐝</span>
-                </div>
-                <h1 className="text-[28px] font-black tracking-tight text-ink">Subscriptions are messy.</h1>
-                <p className="mt-2 text-[16px] font-medium leading-relaxed text-ink-muted">
-                  We built SubBee to make sure you never lose money to a forgotten bill again.
+              <div className="text-center mt-6">
+                <h1 className="text-[26px] font-black tracking-tight text-ink">What is your main goal with SubBee?</h1>
+                <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-ink-muted">
+                  We'll customize your wallet to help you achieve it.
                 </p>
               </div>
-              <Button fullWidth className="!h-14 !text-[17px] mb-8" onClick={() => paginate(2)}>
-                Let's build your wallet
-              </Button>
+
+              <div className="mt-8 flex flex-col gap-3 flex-1">
+                {GOALS.map((goal) => (
+                  <button
+                    key={goal.id}
+                    onClick={() => {
+                      setSelectedGoal(goal.id);
+                      paginate(2);
+                    }}
+                    className={`flex items-center gap-4 rounded-2xl border-2 p-5 text-left transition-all ${
+                      selectedGoal === goal.id ? 'border-teal bg-teal/5 shadow-sm scale-[1.02]' : 'border-[#EAE7DF] bg-white shadow-sm hover:border-teal/30 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="text-2xl">{goal.icon}</span>
+                    <span className="text-[16px] font-extrabold text-ink">{goal.title}</span>
+                  </button>
+                ))}
+              </div>
             </motion.div>
           )}
 
@@ -184,34 +228,62 @@ export default function SignUp() {
               animate="center"
               exit="exit"
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="absolute inset-0 flex flex-col items-center justify-center text-center"
+            >
+              <div className="mx-auto mb-6 h-24 w-24 rounded-full bg-teal/10 flex items-center justify-center">
+                <span className="text-4xl">🤝</span>
+              </div>
+              <h1 className="text-[26px] font-black tracking-tight text-ink">Great goal.</h1>
+              <p className="mt-2 text-[16px] font-medium leading-relaxed text-ink-muted px-4">
+                Let's start by picking the bills you want to manage.
+              </p>
+            </motion.div>
+          )}
+
+          {step === 3 && (
+            <motion.div
+              key="step3"
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className="absolute inset-0 flex flex-col"
             >
-              <div className="text-center mt-4">
-                <h1 className="text-[26px] font-black tracking-tight text-ink">Select your bills.</h1>
-                <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-ink-muted">
-                  Pick the ones you want us to manage. We've highlighted a few popular ones.
+              <div className="text-center mt-2">
+                <h1 className="text-[24px] font-black tracking-tight text-ink">Select your bills.</h1>
+                <p className="mt-1 text-[14px] font-medium leading-relaxed text-ink-muted">
+                  We've highlighted a few popular ones to get you started.
                 </p>
               </div>
 
-              <div className="mt-8 grid grid-cols-2 gap-3 flex-1 overflow-y-auto pb-4">
+              <div className="mt-6 flex flex-col gap-2.5 flex-1 overflow-y-auto pb-4 px-1">
                 {SUBSCRIPTION_OPTIONS.map((sub) => {
                   const selected = selectedSubs.has(sub.id);
                   return (
                     <button
                       key={sub.id}
                       onClick={() => toggleSub(sub.id)}
-                      className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 transition-all ${
-                        selected ? 'border-teal bg-teal/5 shadow-sm scale-[1.02]' : 'border-transparent bg-white shadow-sm hover:bg-gray-50'
+                      className={`flex items-center gap-3 rounded-2xl border-2 p-3 transition-all ${
+                        selected ? 'border-teal bg-teal/5 shadow-sm scale-[1.01]' : 'border-[#EAE7DF] bg-white shadow-sm hover:bg-gray-50'
                       }`}
                     >
-                      <img src={sub.icon} alt={sub.name} className="h-10 w-10 rounded-full object-cover shadow-sm" />
-                      <span className={`text-[13px] font-extrabold ${selected ? 'text-teal' : 'text-ink'}`}>{sub.name}</span>
+                      {/* Logo strictly on the left, not in a circle, authentic branding */}
+                      <div className="flex h-10 w-12 shrink-0 items-center justify-center">
+                        <img src={sub.icon} alt={sub.name} className="max-h-full max-w-full object-contain" />
+                      </div>
+                      <span className={`text-[15px] font-extrabold ${selected ? 'text-teal' : 'text-ink'}`}>{sub.name}</span>
                     </button>
                   );
                 })}
               </div>
 
-              <div className="mb-8 mt-4 flex items-center gap-3">
+              <div className="mt-2 text-center text-[13px] font-semibold text-ink-muted">
+                Many more subscriptions can be chosen or set up inside the app!
+              </div>
+
+              <div className="mb-6 mt-4 flex items-center gap-3">
                 <button type="button" onClick={() => paginate(1)} className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAE7DF] text-ink transition-colors hover:bg-[#dfdbd1]">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M15 18l-6-6 6-6" />
@@ -220,7 +292,7 @@ export default function SignUp() {
                 <Button 
                   fullWidth 
                   className="!h-14 !text-[17px]" 
-                  onClick={() => paginate(3)}
+                  onClick={() => paginate(4)}
                   disabled={selectedSubs.size === 0}
                 >
                   Continue
@@ -229,9 +301,9 @@ export default function SignUp() {
             </motion.div>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <motion.div
-              key="step3"
+              key="step4"
               custom={direction}
               variants={variants}
               initial="enter"
@@ -251,9 +323,9 @@ export default function SignUp() {
             </motion.div>
           )}
 
-          {step === 4 && (
+          {step === 5 && (
             <motion.div
-              key="step4"
+              key="step5"
               custom={direction}
               variants={variants}
               initial="enter"
@@ -278,21 +350,21 @@ export default function SignUp() {
               </div>
 
               <div className="mb-8 mt-4 flex items-center gap-3">
-                <button type="button" onClick={() => paginate(2)} className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAE7DF] text-ink transition-colors hover:bg-[#dfdbd1]">
+                <button type="button" onClick={() => paginate(3)} className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAE7DF] text-ink transition-colors hover:bg-[#dfdbd1]">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M15 18l-6-6 6-6" />
                   </svg>
                 </button>
-                <Button fullWidth className="!h-14 !text-[17px]" onClick={() => paginate(5)}>
+                <Button fullWidth className="!h-14 !text-[17px]" onClick={() => paginate(6)}>
                   Secure My Wallet
                 </Button>
               </div>
             </motion.div>
           )}
 
-          {step === 5 && (
+          {step === 6 && (
             <motion.div
-              key="step5"
+              key="step6"
               custom={direction}
               variants={variants}
               initial="enter"
@@ -323,7 +395,7 @@ export default function SignUp() {
               </form>
 
               <div className="mb-8 mt-4 flex items-center gap-3">
-                <button type="button" onClick={() => paginate(4)} className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAE7DF] text-ink transition-colors hover:bg-[#dfdbd1]">
+                <button type="button" onClick={() => paginate(5)} className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAE7DF] text-ink transition-colors hover:bg-[#dfdbd1]">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M15 18l-6-6 6-6" />
                   </svg>

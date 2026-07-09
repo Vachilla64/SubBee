@@ -17,8 +17,8 @@ export default {
         },
         ink: {
           DEFAULT: '#1E2A2E',
-          muted: '#8A9499',
-          faint: '#9AA3A6',
+          muted: '#8A7A55',
+          faint: '#9E8E6A',
         },
         gold: {
           light: '#F2CE7C',

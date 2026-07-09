@@ -9,6 +9,8 @@ import ActionRequiredCard from '../../components/subscriptions/ActionRequiredCar
 import EmptyState from '../../components/ui/EmptyState';
 import Button from '../../components/ui/Button';
 import { SkeletonRows } from '../../components/ui/Skeleton';
+import { useState } from 'react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 
 function greeting() {
   const h = new Date().getHours();
@@ -30,6 +32,40 @@ export default function Dashboard() {
   const nearestShort = nearest ? shortfallKobo(nearest.sub, walletKobo) : 0;
 
   const previewSubs = subscriptions.slice(0, 3);
+
+  // If this is the initial load, the splash screen is playing (or just played).
+  // We add a delay so the subscriptions slide up exactly when the splash screen finishes clearing.
+  const [isFirstLoad] = useState(() => !sessionStorage.getItem('subbee_splash_seen'));
+
+  const [pendingSubs, setPendingSubs] = useState<any[]>(() => {
+    try {
+      const stored = localStorage.getItem('subbee_pending_subs');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Animation variants for subscriptions sliding up
+  const subsContainerVariants: Variants = {
+    hidden: { opacity: 0, y: 50 },
+    show: { 
+      opacity: 1, 
+      y: 0, 
+      transition: { 
+        type: 'spring', 
+        stiffness: 70, 
+        damping: 15,
+        delay: isFirstLoad ? 1.5 : 0, // Wait for splash screen to clear
+        staggerChildren: 0.1
+      } 
+    }
+  };
+
+  const subItemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
 
   return (
     <div>
@@ -168,44 +204,55 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="mt-2.5 flex flex-col gap-2.5 pb-4">
-          {loading ? (
-            <SkeletonRows count={3} />
-          ) : previewSubs.length === 0 ? (
-            <EmptyState
-              title="No subscriptions yet"
-              message="Add your first subscription and SubBee takes it from here."
-              cta={
-                <Button onClick={() => navigate('/app/subscriptions/add')}>Add a subscription</Button>
-              }
-            />
-          ) : (
-            previewSubs.map((sub) => {
-              const insufficient = isInsufficientFunds(sub, walletKobo);
-              return (
-                <div key={sub.id} className={insufficient ? 'overflow-hidden rounded-[18px] bg-white shadow-[0_3px_12px_rgba(20,40,45,0.05)]' : ''}>
-                  <SubscriptionRow sub={sub} insufficient={insufficient} embedded={insufficient} />
-                  {insufficient && (
-                    <div className="px-2.5 pb-2.5">
-                      <ActionRequiredCard
-                        merchantName={sub.merchantName}
-                        billKobo={sub.amountKobo}
-                        walletKobo={walletKobo}
-                        shortfallKobo={shortfallKobo(sub, walletKobo)}
-                        accountNumber={accountNumber}
-                        onTopUp={() =>
-                          navigate('/app/activity/fund', {
-                            state: { shortfallKobo: shortfallKobo(sub, walletKobo), merchantName: sub.merchantName },
-                          })
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
+        <AnimatePresence>
+          <motion.div 
+            className="mt-2.5 flex flex-col gap-2.5 pb-4"
+            variants={subsContainerVariants}
+            initial="hidden"
+            animate="show"
+          >
+            {loading ? (
+                <SkeletonRows count={3} />
+              ) : previewSubs.length === 0 ? (
+                <EmptyState
+                  title="No subscriptions yet"
+                  message="Add your first subscription and SubBee takes it from here."
+                  cta={
+                    <Button onClick={() => navigate('/app/subscriptions/add')}>Add a subscription</Button>
+                  }
+                />
+              ) : (
+                previewSubs.map((sub) => {
+                  const insufficient = isInsufficientFunds(sub, walletKobo);
+                  return (
+                    <motion.div 
+                      key={sub.id} 
+                      variants={subItemVariants}
+                      className={insufficient ? 'overflow-hidden rounded-[18px] bg-white shadow-[0_3px_12px_rgba(20,40,45,0.05)]' : ''}
+                    >
+                      <SubscriptionRow sub={sub} insufficient={insufficient} embedded={insufficient} />
+                      {insufficient && (
+                        <div className="px-2.5 pb-2.5">
+                          <ActionRequiredCard
+                            merchantName={sub.merchantName}
+                            billKobo={sub.amountKobo}
+                            walletKobo={walletKobo}
+                            shortfallKobo={shortfallKobo(sub, walletKobo)}
+                            accountNumber={accountNumber}
+                            onTopUp={() =>
+                              navigate('/app/activity/fund', {
+                                state: { shortfallKobo: shortfallKobo(sub, walletKobo), merchantName: sub.merchantName },
+                              })
+                            }
+                          />
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
