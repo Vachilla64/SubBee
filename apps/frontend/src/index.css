@@ -3,57 +3,73 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
+    * {
+        box-sizing: border-box;
+    }
 
-  html,
-  body,
-  #root {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-  }
+    html,
+    body,
+    #root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
 
-  body {
-    font-family: 'Nunito', system-ui, -apple-system, sans-serif;
-    background: #FAF3E1;
-    color: #1E2A2E;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-  }
+    body {
+        font-family:
+            "Nunito",
+            system-ui,
+            -apple-system,
+            sans-serif;
+        background: #faf3e1;
+        color: #1e2a2e;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+    }
 
-  input,
-  button,
-  select,
-  textarea {
-    font-family: inherit;
-  }
+    input,
+    button,
+    select,
+    textarea {
+        font-family: inherit;
+    }
 }
 
 @layer utilities {
-  /* Honeycomb hex texture overlay for the gold balance panel — sampled from the synced design */
-  .honeycomb-gold {
-    background-image:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill='%235a3a10' fill-opacity='0.15'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/svg%3E"),
-      linear-gradient(160deg, #F3D084 0%, #E9BC55 50%, #D3A048 100%);
-  }
+    /* Honeycomb hex texture overlay for the gold balance panel — sampled from the synced design */
+    .honeycomb-gold {
+        background-image:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill='%235a3a10' fill-opacity='0.15'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/svg%3E"),
+            linear-gradient(160deg, #f3d084 0%, #e9bc55 50%, #d3a048 100%);
+    }
 
-  .teal-card-gradient {
-    background: linear-gradient(150deg, #2E6264 0%, #1C4042 52%, #143032 100%);
-  }
+    .teal-card-gradient {
+        background: linear-gradient(
+            150deg,
+            #2e6264 0%,
+            #1c4042 52%,
+            #143032 100%
+        );
+    }
 
-  .gold-pill {
-    background: linear-gradient(165deg, #F2CE7C, #E7B84F);
-  }
+    .gold-pill {
+        background: linear-gradient(165deg, #f2ce7c, #e7b84f);
+    }
 
-  .tabular-nums {
-    font-variant-numeric: tabular-nums;
-  }
+    .tabular-nums {
+        font-variant-numeric: tabular-nums;
+    }
 
-  /* Phone-frame width used across every screen per the design spec */
-  .app-shell-width {
-    max-width: 480px;
-  }
+    /* Phone-frame width used across every screen per the design spec */
+    .app-shell-width {
+        max-width: 480px;
+        width: 100%;
+    }
+
+    /* Subtle honeycomb background applied across the entire app */
+    .bg-cream-bg {
+        background-color: #faf3e1 !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='63' viewBox='0 0 28 49'%3E%3Cg fill='%23D4A841' fill-opacity='0.035'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/svg%3E") !important;
+    }
 }
