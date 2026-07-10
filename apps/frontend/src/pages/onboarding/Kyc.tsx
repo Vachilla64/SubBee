@@ -190,37 +190,75 @@ export default function Kyc() {
                 </div>
                 <div className="text-[26px] font-black text-ink tracking-tight mt-3">We couldn't verify you</div>
                 <div className="text-[14.5px] font-semibold text-ink-muted leading-relaxed max-w-[290px] mt-1.5">
-                  {error || "Your details didn't match the records at your bank. It's usually a quick fix — check the points below and try again."}
+                  {error && error.toLowerCase().includes("phone") 
+                    ? "There's an issue with your phone number." 
+                    : error && error.toLowerCase().includes("name") 
+                    ? "The name you provided doesn't match your BVN records."
+                    : error && error.toLowerCase().includes("bvn")
+                    ? "We couldn't validate your BVN."
+                    : error && error.toLowerCase().includes("address")
+                    ? "There's a problem with the address you provided."
+                    : "Your details didn't match the records at your bank. It's usually a quick fix."}
                 </div>
               </div>
 
               {/* reasons */}
               <div className="mt-6 bg-white rounded-[22px] shadow-[0_4px_16px_rgba(20,40,45,0.05)] px-4.5 py-1.5">
-                <div className="flex items-start gap-3 py-3.5 border-b border-[#F0EDE5]">
-                  <div className="w-[30px] h-[30px] rounded-[10px] bg-[#FEF1EE] flex items-center justify-center shrink-0">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18"></path></svg>
+                {(!error || (!error.toLowerCase().includes("phone") && !error.toLowerCase().includes("address"))) && (
+                  <>
+                    <div className="flex items-start gap-3 py-3.5 border-b border-[#F0EDE5]">
+                      <div className="w-[30px] h-[30px] rounded-[10px] bg-[#FEF1EE] flex items-center justify-center shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18"></path></svg>
+                      </div>
+                      <div>
+                        <div className="text-[14px] font-extrabold text-ink">Check your BVN</div>
+                        <div className="text-[12.5px] font-semibold text-ink-muted leading-[1.4]">Re-enter it carefully — one wrong digit will fail the match.</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 py-3.5 border-b border-[#F0EDE5]">
+                      <div className="w-[30px] h-[30px] rounded-[10px] bg-[#FEF1EE] flex items-center justify-center shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path><path d="M12 8v4M12 16h.01"></path></svg>
+                      </div>
+                      <div>
+                        <div className="text-[14px] font-extrabold text-ink">Match your legal name</div>
+                        <div className="text-[12.5px] font-semibold text-ink-muted leading-[1.4]">Make sure your first and last name exactly match your bank records.</div>
+                      </div>
+                    </div>
+                  </>
+                )}
+                
+                {error && error.toLowerCase().includes("phone") && (
+                  <div className="flex items-start gap-3 py-3.5 border-b border-[#F0EDE5]">
+                    <div className="w-[30px] h-[30px] rounded-[10px] bg-[#FEF1EE] flex items-center justify-center shrink-0">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                    </div>
+                    <div>
+                      <div className="text-[14px] font-extrabold text-ink">Invalid Phone Number</div>
+                      <div className="text-[12.5px] font-semibold text-ink-muted leading-[1.4]">Ensure your phone number is correct and doesn't contain spaces or special characters.</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-[14px] font-extrabold text-ink">Check your BVN or NIN</div>
-                    <div className="text-[12.5px] font-semibold text-ink-muted leading-[1.4]">Re-enter it carefully — one wrong digit will fail the match.</div>
+                )}
+
+                {error && error.toLowerCase().includes("address") && (
+                  <div className="flex items-start gap-3 py-3.5 border-b border-[#F0EDE5]">
+                    <div className="w-[30px] h-[30px] rounded-[10px] bg-[#FEF1EE] flex items-center justify-center shrink-0">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    </div>
+                    <div>
+                      <div className="text-[14px] font-extrabold text-ink">Incomplete Address</div>
+                      <div className="text-[12.5px] font-semibold text-ink-muted leading-[1.4]">Ensure your street address is complete and includes a house number.</div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start gap-3 py-3.5 border-b border-[#F0EDE5]">
-                  <div className="w-[30px] h-[30px] rounded-[10px] bg-[#FEF1EE] flex items-center justify-center shrink-0">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path><path d="M12 8v4M12 16h.01"></path></svg>
-                  </div>
-                  <div>
-                    <div className="text-[14px] font-extrabold text-ink">Match your legal name</div>
-                    <div className="text-[12.5px] font-semibold text-ink-muted leading-[1.4]">Use the exact name registered with your bank.</div>
-                  </div>
-                </div>
+                )}
+                
+                {/* Fallback general tip */}
                 <div className="flex items-start gap-3 py-3.5">
                   <div className="w-[30px] h-[30px] rounded-[10px] bg-[#FEF1EE] flex items-center justify-center shrink-0">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                   </div>
                   <div>
-                    <div className="text-[14px] font-extrabold text-ink">Retake your selfie</div>
-                    <div className="text-[12.5px] font-semibold text-ink-muted leading-[1.4]">Good light, no glasses or hat, face fully in frame.</div>
+                    <div className="text-[14px] font-extrabold text-ink">Verify your Date of Birth</div>
+                    <div className="text-[12.5px] font-semibold text-ink-muted leading-[1.4]">Check that your DOB matches your official ID exactly.</div>
                   </div>
                 </div>
               </div>
@@ -230,12 +268,23 @@ export default function Kyc() {
               {/* CTAs */}
               <div className="mt-8 flex flex-col items-stretch w-full pb-2">
                 <button 
-                  onClick={() => setCeremonyPhase("none")} 
+                  onClick={() => {
+                    // Go back to the step based on error type
+                    if (error) {
+                      const lower = error.toLowerCase();
+                      if (lower.includes("phone")) paginate(3);
+                      else if (lower.includes("address")) paginate(3);
+                      else if (lower.includes("name") || lower.includes("dob")) paginate(2);
+                      else setCeremonyPhase("none"); // Default back to step 4
+                    } else {
+                      setCeremonyPhase("none");
+                    }
+                  }} 
                   className="h-[58px] rounded-full text-[#3A2A0E] font-black text-[16px] shadow-[0_12px_22px_-10px_rgba(207,154,68,0.9)] flex items-center justify-center gap-2.5 transition-transform active:scale-95" 
                   style={{ background: 'linear-gradient(165deg, #F2CE7C, #E7B84F 60%, #DFAE44)' }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3A2A0E" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"></path><path d="M21 3v5h-5"></path></svg>
-                  Try again
+                  Fix Details
                 </button>
                 <button 
                   onClick={() => window.open('mailto:support@subbee.com')} 
