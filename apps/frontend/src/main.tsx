@@ -10,13 +10,16 @@ import '@fontsource/nunito/900.css';
 import './index.css';
 import App from './App.tsx';
 import { AuthProvider } from './lib/auth.tsx';
+import { TransitionProvider } from './lib/TransitionContext.tsx';
 import ToastProvider from './components/ui/ToastProvider.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <TransitionProvider>
+          <App />
+        </TransitionProvider>
         <ToastProvider />
       </AuthProvider>
     </BrowserRouter>
