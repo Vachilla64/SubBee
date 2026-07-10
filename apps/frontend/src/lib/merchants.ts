@@ -6,6 +6,7 @@ export interface Merchant {
 }
 
 export const MERCHANTS: Merchant[] = [
+  // Existing
   { id: 'netflix', name: 'Netflix', domain: 'netflix.com', defaultPriceNaira: 4500 },
   { id: 'spotify', name: 'Spotify', domain: 'spotify.com', defaultPriceNaira: 900 },
   { id: 'amazon_prime', name: 'Amazon Prime Video', domain: 'primevideo.com', defaultPriceNaira: 2300 },
@@ -20,6 +21,17 @@ export const MERCHANTS: Merchant[] = [
   { id: 'openai', name: 'OpenAI ChatGPT Plus', domain: 'openai.com', defaultPriceNaira: 17000 },
   { id: 'zoom', name: 'Zoom Premium', domain: 'zoom.us', defaultPriceNaira: 12500 },
   { id: 'linkedin', name: 'LinkedIn', domain: 'linkedin.com', defaultPriceNaira: 12000 },
+
+  // Foreign additions
+  { id: 'canva', name: 'Canva Pro', domain: 'canva.com', defaultPriceNaira: 8000 },
+  { id: 'adobe', name: 'Adobe Creative Cloud', domain: 'adobe.com', defaultPriceNaira: 35000 },
+
+  // Nigerian additions
+  { id: 'showmax', name: 'Showmax', domain: 'showmax.com', defaultPriceNaira: 2900 },
+  { id: 'mtn', name: 'MTN', domain: 'mtn.com', defaultPriceNaira: 5000 },
+  { id: 'airtel', name: 'Airtel', domain: 'airtel.com', defaultPriceNaira: 5000 },
+  { id: 'boomplay', name: 'Boomplay', domain: 'boomplay.com', defaultPriceNaira: 1200 },
+  { id: 'piggyvest', name: 'PiggyVest', domain: 'piggyvest.com', defaultPriceNaira: 1000 },
 ];
 
 export function merchantById(id: string): Merchant | undefined {

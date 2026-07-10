@@ -5,6 +5,7 @@ import OnboardingShell from "../../components/layout/OnboardingShell";
 import TextField from "../../components/ui/TextField";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../lib/auth";
+import { useTransition } from "../../lib/TransitionContext";
 import { formatNaira } from "../../lib/format";
 
 type SubscriptionOption = {
@@ -51,6 +52,37 @@ const SUBSCRIPTION_OPTIONS: SubscriptionOption[] = [
   },
   { id: "zoom", name: "Zoom Pro", icon: "/icons/zoom.png", price: 1500000 },
   { id: "play", name: "Google Play", icon: "/icons/play.png", price: 100000 },
+  // Foreign additions
+  { id: "hulu", name: "Hulu", icon: "/icons/hulu.png", price: 450000 },
+  { id: "disney", name: "Disney+", icon: "/icons/disney.png", price: 520000 },
+  { id: "canva", name: "Canva Pro", icon: "/icons/canva.png", price: 800000 },
+  {
+    id: "adobe",
+    name: "Adobe Creative Cloud",
+    icon: "/icons/adobe.png",
+    price: 3500000,
+  },
+  // Nigerian additions
+  {
+    id: "showmax",
+    name: "Showmax",
+    icon: "/icons/showmax.png",
+    price: 290000,
+  },
+  { id: "mtn", name: "MTN", icon: "/icons/mtn.png", price: 500000 },
+  { id: "airtel", name: "Airtel", icon: "/icons/airtel.png", price: 500000 },
+  {
+    id: "boomplay",
+    name: "Boomplay",
+    icon: "/icons/boomplay.png",
+    price: 120000,
+  },
+  {
+    id: "piggyvest",
+    name: "PiggyVest",
+    icon: "/icons/piggyvest.png",
+    price: 100000,
+  },
 ];
 
 const GOALS = [
@@ -90,6 +122,7 @@ export default function SignUp() {
   const [submitting, setSubmitting] = useState(false);
 
   const { login } = useAuth();
+  const { triggerTransition } = useTransition();
   const navigate = useNavigate();
 
   const paginate = (newStep: number) => {
@@ -131,12 +164,20 @@ export default function SignUp() {
 
       // 2. Perform actual login/signup
       const user = await login(name || email.split("@")[0], email);
-      navigate(user.kycStatus === "verified" ? "/app/dashboard" : "/kyc");
+      triggerTransition(() => {
+        navigate(user.kycStatus === "verified" ? "/app/dashboard" : "/kyc");
+      });
     } catch {
       setError("Something went wrong — check your details and try again.");
-    } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleContinue = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim()) return;
+    setError(null);
+    paginate(6);
   };
 
   // Auto advance animation steps
@@ -315,7 +356,7 @@ export default function SignUp() {
                 </p>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-3 flex-1 overflow-y-auto pb-4 px-1">
+              <div className="mt-6 grid grid-cols-2 gap-3 flex-1 overflow-y-auto pt-1 pb-4 px-1">
                 {SUBSCRIPTION_OPTIONS.map((sub) => {
                   const selected = selectedSubs.has(sub.id);
                   return (
@@ -330,7 +371,7 @@ export default function SignUp() {
                     >
                       {/*tick*/}
                       {selected && (
-                        <div className="absolute top-2 right-2 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gold-mid text-white shadow-sm">
+                        <div className="absolute top-2 right-2 flex size-5 items-center justify-center rounded-full bg-gold-mid text-white shadow-sm">
                           <svg
                             width="10"
                             height="10"
@@ -430,73 +471,6 @@ export default function SignUp() {
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="absolute inset-0 flex flex-col"
             >
-              <div className="text-center mt-6 flex-1">
-                <img
-                  src="/illustrations/bee-happy.png"
-                  alt="Happy Bee"
-                  className="mx-auto mb-4 h-[110px] w-[110px] object-contain animate-float"
-                />
-                <h1 className="text-[26px] font-black tracking-tight text-ink">
-                  Welcome to the Hive!
-                </h1>
-                <p className="mt-3 text-[15px] font-medium leading-relaxed text-ink-muted">
-                  We'll automatically track your{" "}
-                  <strong className="text-ink">
-                    {formatNaira(totalSpend)}
-                  </strong>{" "}
-                  monthly spend across{" "}
-                  <strong className="text-ink">
-                    {selectedSubs.size} services
-                  </strong>
-                  .
-                </p>
-                <div className="mt-6 rounded-[20px] border border-[#B6E0BE] bg-[#EAF7ED] px-4 py-4 shadow-sm text-center">
-                  <p className="text-[14px] font-extrabold text-[#4A8A5C] leading-snug">
-                    Next step: Set up your SubBee Virtual Card to automate your
-                    payments!
-                  </p>
-                </div>
-              </div>
-
-              <div className="mb-8 mt-4 flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => paginate(3)}
-                  className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAE7DF] text-ink transition-colors hover:bg-[#dfdbd1]"
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                </button>
-                <Button
-                  fullWidth
-                  className="!h-14 !text-[17px]"
-                  onClick={() => paginate(6)}
-                >
-                  One more thing...
-                </Button>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 6 && (
-            <motion.div
-              key="step6"
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute inset-0 flex flex-col"
-            >
               <div className="text-center mt-4 mb-6">
                 <h1 className="text-[26px] font-black tracking-tight text-ink">
                   Who are you?
@@ -508,7 +482,7 @@ export default function SignUp() {
               </div>
 
               <form
-                onSubmit={handleSubmit}
+                onSubmit={handleContinue}
                 className="flex flex-col gap-3.5 flex-1"
               >
                 <TextField
@@ -533,6 +507,79 @@ export default function SignUp() {
                   </p>
                 )}
               </form>
+
+              <div className="mb-8 mt-4 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => paginate(3)}
+                  className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAE7DF] text-ink transition-colors hover:bg-[#dfdbd1]"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+                <Button
+                  fullWidth
+                  className="!h-14 !text-[17px]"
+                  onClick={handleContinue}
+                  disabled={!name.trim() || !email.trim()}
+                >
+                  Continue
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 6 && (
+            <motion.div
+              key="step6"
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="absolute inset-0 flex flex-col"
+            >
+              <div className="text-center mt-6 flex-1">
+                <img
+                  src="/illustrations/subbee-logo.png"
+                  alt="SubBee"
+                  className="mx-auto mb-4 h-[100px] w-[100px] object-contain animate-float"
+                />
+                <h1 className="text-[26px] font-black tracking-tight text-ink">
+                  Welcome to the Hive!
+                </h1>
+                <p className="mt-3 text-[15px] font-medium leading-relaxed text-ink-muted">
+                  We'll automatically track your{" "}
+                  <strong className="text-ink">
+                    {formatNaira(totalSpend)}
+                  </strong>{" "}
+                  monthly spend across{" "}
+                  <strong className="text-ink">
+                    {selectedSubs.size} services
+                  </strong>
+                  .
+                </p>
+                <div className="mt-6 rounded-[20px] border border-[#B6E0BE] bg-[#EAF7ED] px-4 py-4 shadow-sm text-center">
+                  <p className="text-[14px] font-extrabold text-[#4A8A5C] leading-snug">
+                    Next step: Set up your SubBee Virtual Card to automate your
+                    payments!
+                  </p>
+                </div>
+                {error && (
+                  <p className="mt-4 text-sm font-semibold text-salmon-text">
+                    {error}
+                  </p>
+                )}
+              </div>
 
               <div className="mb-8 mt-4 flex items-center gap-3">
                 <button
