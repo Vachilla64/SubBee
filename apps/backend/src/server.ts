@@ -146,10 +146,10 @@ app.post(
 
 app.use(cors());
 
-// Configure Express to serialize BigInt as string to prevent JSON.stringify errors
-app.set('json replacer', (_key: string, value: any) =>
-  typeof value === 'bigint' ? value.toString() : value
-);
+// Configure global JSON serialization for BigInts
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
 
 app.use(express.json());
 
@@ -946,8 +946,9 @@ async function bootstrapScheduler() {
   }
 }
 
-app.listen(PORT, () => {
-  console.log(`
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`
 ┌─────────────────────────────────────────────────┐
 │              🐝  SubBee API  🐝                  │
 │                                                  │
@@ -960,11 +961,11 @@ app.listen(PORT, () => {
 │                                                  │
 │  Milestone: M4 — Trust Layer                     │
 └─────────────────────────────────────────────────┘
-  `);
+    `);
 
-  bootstrapScheduler();
-});
+    bootstrapScheduler();
+  });
+}
 
-export default app;
-// Trivial change to trigger nodemon restart after EADDRINUSE race condition.
+export { app };
 
