@@ -15,6 +15,7 @@ export default function SubscriptionRow({
   insufficient,
   embedded,
   awaitingCard,
+  onClick,
 }: {
   sub: SubscriptionRowData;
   insufficient: boolean;
@@ -22,13 +23,15 @@ export default function SubscriptionRow({
    *  drop its own card chrome so we don't stack a white rounded shadow inside another. */
   embedded?: boolean;
   awaitingCard?: boolean;
+  /** Overrides the default navigate-to-detail-page behavior — used for rows that don't have a real ID yet. */
+  onClick?: () => void;
 }) {
   const navigate = useNavigate();
   const status = awaitingCard ? 'awaiting_card' : insufficient ? 'insufficient' : sub.isActive ? 'active' : 'paused';
 
   return (
     <button
-      onClick={() => navigate(`/app/subscriptions/${sub.id}`)}
+      onClick={onClick ?? (() => navigate(`/app/subscriptions/${sub.id}`))}
       className={`flex w-full items-center gap-3 px-3.5 py-3 text-left ${
         embedded ? '' : 'rounded-[18px] bg-white shadow-[0_3px_12px_rgba(20,40,45,0.05)]'
       }`}

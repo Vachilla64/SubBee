@@ -90,3 +90,19 @@ export const reconciliationQueue = new Queue('reconciliation-queue', {
 });
 
 console.log('[queue] Reconciliation queue initialized.');
+
+// Initialize the withdrawal queue for outbound Nomba bank transfer webhooks
+export const withdrawalQueue = new Queue('withdrawal-queue', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+    removeOnComplete: true,
+    removeOnFail: 100,
+  },
+});
+
+console.log('[queue] Withdrawal queue initialized.');

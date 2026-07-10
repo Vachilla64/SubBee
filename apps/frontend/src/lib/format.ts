@@ -52,6 +52,8 @@ const SOURCE_TYPE_LABEL: Record<string, string> = {
   adjustment: 'Balance adjustment',
   float_topup: 'Float top-up',
   maintenance_fee: 'Maintenance fee',
+  withdrawal: 'Withdrawal',
+  withdrawal_reversal: 'Withdrawal reversed',
 };
 
 export function transactionLabel(sourceType: string): string {

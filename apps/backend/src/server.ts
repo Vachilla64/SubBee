@@ -10,15 +10,18 @@ import { db } from './db';
 import { cardQueue, schedulerQueue, invariantQueue, reconciliationQueue } from './workers/queue';
 import { bridgecard } from './services/bridgecard/client';
 import { checkBalanceIntegrity, checkZeroSum, checkOverdrafts } from './ledger/invariants';
+import { reverseWithdrawal } from './ledger/withdrawals';
 
 // Import workers to ensure they register and start listening to Redis
 import './workers/deposit.worker';
 import './workers/card.worker';
 import './workers/scheduler.worker';
 import './workers/reconciliation.worker';
+import './workers/withdrawal.worker';
 import { bot } from './telegram/bot';
 import nombaWebhookRouter from './webhooks/nomba';
 import { createNombaVirtualAccount, expireNombaVirtualAccount } from './services/nomba/accounts';
+import { listBanks, lookupBankAccount, sendBankTransfer } from './services/nomba/transfers';
 import { fundVirtualCard } from './services/funding';
 
 let botUsername = 'SubBeeBot';
@@ -236,11 +239,11 @@ app.delete('/api/users', async (req: Request, res: Response) => {
     }
 
     // 2. Freeze all Bridgecard virtual cards to halt fees and subscriptions
-    const cardsRes = await db.query("SELECT card_id FROM cards WHERE user_id = $1 AND provider = 'bridgecard'", [user.id]);
+    const cardsRes = await db.query('SELECT bridgecard_card_id FROM cards WHERE user_id = $1', [user.id]);
     for (const row of cardsRes.rows) {
-      if (row.card_id) {
-        await bridgecard.freezeCard(row.card_id).catch(err => {
-          console.warn(`[api/users/delete] Failed to freeze card ${row.card_id}:`, err.message || err);
+      if (row.bridgecard_card_id) {
+        await bridgecard.freezeCard(row.bridgecard_card_id).catch(err => {
+          console.warn(`[api/users/delete] Failed to freeze card ${row.bridgecard_card_id}:`, err.message || err);
         });
       }
     }
@@ -504,6 +507,137 @@ app.post('/api/deposit', async (req: Request, res: Response) => {
   }
 });
 
+// 4b. List banks for the withdrawal bank picker
+app.get('/api/banks', async (_req: Request, res: Response) => {
+  try {
+    const banks = await listBanks();
+    res.json({ banks });
+  } catch (error: any) {
+    console.error('[api/banks] Error fetching banks:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 4c. Resolve a bank account name before withdrawing (user confirms the name matches)
+app.post('/api/withdraw/lookup', async (req: Request, res: Response) => {
+  const { accountNumber, bankCode } = req.body;
+  if (!accountNumber || !bankCode) {
+    res.status(400).json({ error: 'accountNumber and bankCode are required' });
+    return;
+  }
+
+  try {
+    const result = await lookupBankAccount(accountNumber, bankCode);
+    res.json(result);
+  } catch (error: any) {
+    console.error('[api/withdraw/lookup] Error looking up account:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// 4d. Withdraw wallet funds to an external bank account
+app.post('/api/withdraw', async (req: Request, res: Response) => {
+  const { email, amountNaira, accountNumber, bankCode, accountName } = req.body;
+  if (!email || !amountNaira || !accountNumber || !bankCode || !accountName) {
+    res.status(400).json({ error: 'email, amountNaira, accountNumber, bankCode and accountName are required' });
+    return;
+  }
+
+  const amountKobo = BigInt(Math.round(Number(amountNaira) * 100));
+  if (amountKobo <= 0n) {
+    res.status(400).json({ error: 'Invalid amount' });
+    return;
+  }
+
+  try {
+    const user = await getUserByEmail(email);
+    const merchantTxRef = `wd_${crypto.randomUUID()}`;
+
+    // Debit the wallet atomically (the WHERE clause below IS the overdraft guard)
+    // and record the pending withdrawal before ever calling out to Nomba — this
+    // is the hold that stops a second concurrent request from double-spending
+    // the same balance while the transfer is in flight.
+    let withdrawalId: string;
+    try {
+      withdrawalId = await db.transaction(async (client) => {
+        const walletRes = await client.query(
+          "SELECT id FROM ledger_accounts WHERE user_id = $1 AND type = 'wallet' AND currency = 'NGN'",
+          [user.id]
+        );
+        if (walletRes.rowCount === 0) throw new Error('Wallet not found');
+        const walletId = walletRes.rows[0].id;
+
+        const debitRes = await client.query(
+          'UPDATE ledger_accounts SET current_balance = current_balance - $1 WHERE id = $2 AND current_balance >= $1',
+          [amountKobo, walletId]
+        );
+        if (debitRes.rowCount === 0) throw new Error('INSUFFICIENT_FUNDS');
+
+        let poolRes = await client.query(
+          "SELECT id FROM ledger_accounts WHERE user_id IS NULL AND type = 'nomba_pool' AND currency = 'NGN'"
+        );
+        if (poolRes.rowCount === 0) {
+          poolRes = await client.query(
+            "INSERT INTO ledger_accounts (user_id, type, currency) VALUES (NULL, 'nomba_pool', 'NGN') RETURNING id"
+          );
+        }
+        const poolId = poolRes.rows[0].id;
+
+        await client.query(
+          'UPDATE ledger_accounts SET current_balance = current_balance + $1 WHERE id = $2',
+          [amountKobo, poolId]
+        );
+
+        const txnId = crypto.randomUUID();
+        await client.query(
+          'INSERT INTO ledger_entries (txn_id, account_id, direction, amount, source_type, source_ref) VALUES ($1, $2, $3, $4, $5, $6)',
+          [txnId, walletId, 'debit', amountKobo, 'withdrawal', merchantTxRef]
+        );
+        await client.query(
+          'INSERT INTO ledger_entries (txn_id, account_id, direction, amount, source_type, source_ref) VALUES ($1, $2, $3, $4, $5, $6)',
+          [txnId, poolId, 'credit', amountKobo, 'withdrawal', merchantTxRef]
+        );
+
+        const wdRes = await client.query(
+          `INSERT INTO withdrawals (user_id, amount_kobo, bank_code, account_number, account_name, merchant_tx_ref, status)
+           VALUES ($1, $2, $3, $4, $5, $6, 'pending') RETURNING id`,
+          [user.id, amountKobo, bankCode, accountNumber, accountName, merchantTxRef]
+        );
+        return wdRes.rows[0].id;
+      });
+    } catch (err: any) {
+      if (err.message === 'INSUFFICIENT_FUNDS') {
+        res.status(400).json({ error: 'Insufficient wallet balance' });
+        return;
+      }
+      throw err;
+    }
+
+    // Funds are already reserved. A hard failure here (network error, 400+
+    // rejection) means Nomba never accepted the transfer, so it's safe to
+    // reverse the hold immediately. 200/201 means Nomba accepted it and the
+    // payout webhook (workers/withdrawal.worker.ts) finalizes it from here.
+    try {
+      const outcome = await sendBankTransfer({ amountKobo, accountNumber, accountName, bankCode, merchantTxRef });
+      if (outcome.outcome === 'success') {
+        await db.query(
+          "UPDATE withdrawals SET status = 'successful', provider_transaction_id = $2, updated_at = NOW() WHERE id = $1",
+          [withdrawalId, outcome.providerTransactionId]
+        );
+      }
+    } catch (transferErr: any) {
+      await reverseWithdrawal(withdrawalId, user.id, amountKobo, transferErr.message);
+      res.status(502).json({ error: 'We could not reach the bank right now. Your funds were not deducted.' });
+      return;
+    }
+
+    res.json({ status: 'success', withdrawalId, merchantTxRef });
+  } catch (error: any) {
+    console.error('[api/withdraw] Error processing withdrawal:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 5. Issue Card (Lazy card issuance)
 app.post('/api/card', async (req: Request, res: Response) => {
   const { email, pin } = req.body;
@@ -526,6 +660,21 @@ app.post('/api/card', async (req: Request, res: Response) => {
       return;
     }
     const cardholder = chRes.rows[0];
+
+    // Idempotency: if a card was already issued for this user (e.g. a retry after
+    // a client-side failure), return it instead of issuing a duplicate card.
+    const existingCardRes = await db.query(
+      'SELECT bridgecard_card_id, last4, brand, status FROM cards WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+      [user.id]
+    );
+    if (existingCardRes.rowCount && existingCardRes.rowCount > 0) {
+      const existing = existingCardRes.rows[0];
+      res.json({
+        status: 'success',
+        card: { cardId: existing.bridgecard_card_id, last4: existing.last4, brand: existing.brand, status: existing.status }
+      });
+      return;
+    }
 
     // Call Bridgecard client to lazy issue card
     const cardData = await bridgecard.createVirtualCard(cardholder.bridgecard_cardholder_id, pin || '1234');
@@ -555,7 +704,7 @@ app.get('/api/card', async (req: Request, res: Response) => {
     const user = await getUserByEmail(email);
 
     const cardRes = await db.query(
-      'SELECT * FROM cards WHERE user_id = $1',
+      'SELECT * FROM cards WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
       [user.id]
     );
 

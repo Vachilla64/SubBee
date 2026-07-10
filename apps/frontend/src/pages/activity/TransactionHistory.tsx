@@ -78,9 +78,14 @@ export default function TransactionHistory() {
           </div>
         ) : (
           <>
-            <Button fullWidth onClick={() => navigate('/app/activity/fund')} className="mb-4">
-              + Add Money
-            </Button>
+            <div className="mb-4 flex gap-2.5">
+              <Button fullWidth onClick={() => navigate('/app/activity/fund')}>
+                + Add Money
+              </Button>
+              <Button variant="secondary" fullWidth onClick={() => navigate('/app/activity/withdraw')}>
+                Withdraw
+              </Button>
+            </div>
             {Object.entries(groups).map(([label, rows]) => (
               <div key={label} className="mb-4">
                 <div className="pb-2 pl-1 text-[13px] font-black tracking-wide text-[#8A7A55]">{label}</div>

@@ -3,7 +3,7 @@ import express from "express";
 import crypto from "crypto";
 import { db } from "../db";
 import { config } from "../config";
-import { depositQueue } from "../workers/queue";
+import { depositQueue, withdrawalQueue } from "../workers/queue";
 
 const nombaWebhookRouter: Router = Router();
 
@@ -57,7 +57,11 @@ nombaWebhookRouter.post(
     const transaction = data?.["transaction"];
     const eventId =
       transaction?.["transactionId"] ?? payload["requestId"] ?? "unknown";
-    const eventType = payload["eventType"] ?? "unknown";
+    // Nomba's real payloads use snake_case `event_type` — the original deposit
+    // handler assumed camelCase, so check both rather than risk "unknown" routing.
+    const eventType =
+      payload["event_type"] ?? payload["eventType"] ?? "unknown";
+    const isPayoutEvent = eventType.startsWith("payout");
 
     try {
       // ── Step 3: Idempotency check via DB Unique Constraint ───────────────────
@@ -76,11 +80,14 @@ nombaWebhookRouter.post(
       }
 
       // ── Step 4: Enqueue job to BullMQ ────────────────────────────────────────
-      await depositQueue.add("process-deposit", {
-        eventId,
-        eventType,
-        payload,
-      });
+      // One shared endpoint receives every subscribed Nomba event type — route
+      // outbound transfer events (payout_success/payout_failed/payout_refund) to
+      // the withdrawal worker, everything else to the deposit worker as before.
+      if (isPayoutEvent) {
+        await withdrawalQueue.add("process-payout", { eventId, eventType, payload });
+      } else {
+        await depositQueue.add("process-deposit", { eventId, eventType, payload });
+      }
 
       console.log("[webhook/nomba] Webhook enqueued successfully", {
         eventId,

@@ -22,10 +22,12 @@ import RevealCardDetails from './pages/card/RevealCardDetails';
 
 import TransactionHistory from './pages/activity/TransactionHistory';
 import FundWallet from './pages/activity/FundWallet';
+import WithdrawFunds from './pages/activity/WithdrawFunds';
 import TransactionDetail from './pages/activity/TransactionDetail';
 
 import Profile from './pages/profile/Profile';
 import ConnectedChannels from './pages/profile/ConnectedChannels';
+import ConnectWhatsApp from './pages/profile/ConnectWhatsApp';
 import NotificationPreferences from './pages/profile/NotificationPreferences';
 import Security from './pages/profile/Security';
 import HelpSupport from './pages/profile/HelpSupport';
@@ -82,10 +84,12 @@ export default function App() {
 
           <Route path="activity" element={<TransactionHistory />} />
           <Route path="activity/fund" element={<FundWallet />} />
+          <Route path="activity/withdraw" element={<WithdrawFunds />} />
           <Route path="activity/txn/:id" element={<TransactionDetail />} />
 
           <Route path="profile" element={<Profile />} />
           <Route path="profile/channels" element={<ConnectedChannels />} />
+          <Route path="profile/channels/whatsapp" element={<ConnectWhatsApp />} />
           <Route path="profile/notifications" element={<NotificationPreferences />} />
           <Route path="profile/security" element={<Security />} />
           <Route path="profile/help" element={<HelpSupport />} />

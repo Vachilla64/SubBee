@@ -3,6 +3,8 @@ import { useAuth } from "../../lib/auth";
 import { useState } from "react";
 import { useWalletData } from "../../lib/useWalletData";
 import { api } from "../../lib/api";
+import ConfirmSheet from "../../components/ui/ConfirmSheet";
+import Modal from "../../components/ui/Modal";
 
 const KYC_BADGE: Record<string, { label: string; className: string }> = {
   verified: {
@@ -29,8 +31,33 @@ export default function Profile() {
   const navigate = useNavigate();
   const { telegramConnected } = useWalletData();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const deleteAccount = async () => {
+    if (!user?.email) return;
+    setConfirmDelete(false);
+    setIsDeleting(true);
+    try {
+      await api.deleteAccount(user.email);
+      logout();
+      navigate("/welcome", { replace: true });
+    } catch (err: any) {
+      console.error("Failed to delete account:", err);
+      let msg = "Failed to delete account. Please try again.";
+      try {
+        const parsed = JSON.parse(err.message);
+        if (parsed.error) msg = parsed.error;
+      } catch {
+        // Ignore parse error, use generic message
+      }
+      setDeleteError(msg);
+      setIsDeleting(false);
+    }
+  };
 
   const badge = KYC_BADGE[user?.kycStatus ?? "none"] ?? KYC_BADGE.none;
+  const hasRemainingBalance = !!deleteError?.toLowerCase().includes("remaining balance");
 
   return (
     <div>
@@ -67,37 +94,61 @@ export default function Profile() {
           <div className="mb-2 pl-1 text-[11px] font-extrabold uppercase tracking-wide text-ink-faint">
             Connected Channels
           </div>
-          <button
-            onClick={() => navigate("/app/profile/channels")}
-            className="flex w-full items-center gap-3 rounded-[18px] bg-white px-4 py-3 text-left shadow-[0_3px_12px_rgba(20,40,45,0.05)]"
-          >
-            <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px] bg-[#229ED9]">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF">
-                <path d="M21.9 4.3l-3.3 15.6c-.25 1.1-.9 1.37-1.83.85l-5.05-3.72-2.44 2.35c-.27.27-.5.5-1.02.5l.36-5.14L18 5.6c.42-.37-.09-.58-.65-.21L6.42 12.2 1.5 10.66c-1.07-.33-1.09-1.07.22-1.58L20.5 2.7c.9-.33 1.68.21 1.4 1.6z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <div className="text-[15px] font-extrabold text-ink">
-                Telegram
-              </div>
-              <div
-                className={`text-xs font-bold ${telegramConnected ? "text-active-text" : "text-ink-muted"}`}
-              >
-                {telegramConnected
-                  ? "Alerts & receipts active"
-                  : "Not connected"}
-              </div>
-            </div>
-            <span
-              className={`rounded-full px-2.5 py-1.5 text-[11px] font-extrabold ${
-                telegramConnected
-                  ? "border-[1.5px] border-active-border bg-active-bg text-active-text"
-                  : "bg-[#F1EEE7] text-[#8A7A55]"
-              }`}
+          <div className="flex flex-col gap-2.5">
+            <button
+              onClick={() => navigate("/app/profile/channels")}
+              className="flex w-full items-center gap-3 rounded-[18px] bg-white px-4 py-3 text-left shadow-[0_3px_12px_rgba(20,40,45,0.05)]"
             >
-              {telegramConnected ? "✓ ON" : "● OFF"}
-            </span>
-          </button>
+              <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px] bg-[#229ED9]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF">
+                  <path d="M21.9 4.3l-3.3 15.6c-.25 1.1-.9 1.37-1.83.85l-5.05-3.72-2.44 2.35c-.27.27-.5.5-1.02.5l.36-5.14L18 5.6c.42-.37-.09-.58-.65-.21L6.42 12.2 1.5 10.66c-1.07-.33-1.09-1.07.22-1.58L20.5 2.7c.9-.33 1.68.21 1.4 1.6z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <div className="text-[15px] font-extrabold text-ink">
+                  Telegram
+                </div>
+                <div
+                  className={`text-xs font-bold ${telegramConnected ? "text-active-text" : "text-ink-muted"}`}
+                >
+                  {telegramConnected
+                    ? "Alerts & receipts active"
+                    : "Not connected"}
+                </div>
+              </div>
+              <span
+                className={`rounded-full px-2.5 py-1.5 text-[11px] font-extrabold ${
+                  telegramConnected
+                    ? "border-[1.5px] border-active-border bg-active-bg text-active-text"
+                    : "bg-[#F1EEE7] text-[#8A7A55]"
+                }`}
+              >
+                {telegramConnected ? "✓ ON" : "● OFF"}
+              </span>
+            </button>
+
+            <button
+              onClick={() => navigate("/app/profile/channels/whatsapp")}
+              className="flex w-full items-center gap-3 rounded-[18px] bg-white px-4 py-3 text-left shadow-[0_3px_12px_rgba(20,40,45,0.05)]"
+            >
+              <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px] bg-[#25D366]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF">
+                  <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.26A10 10 0 1 0 12 2z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <div className="text-[15px] font-extrabold text-ink">
+                  WhatsApp
+                </div>
+                <div className="text-xs font-bold text-ink-muted">
+                  Not yet available
+                </div>
+              </div>
+              <span className="rounded-full bg-[#F1EEE7] px-2.5 py-1.5 text-[11px] font-extrabold text-[#8A7A55]">
+                ● OFF
+              </span>
+            </button>
+          </div>
         </div>
 
         <div>
@@ -156,34 +207,38 @@ export default function Profile() {
         </button>
 
         <button
-          onClick={async () => {
-            if (!user?.email) return;
-            if (confirm("Are you sure you want to delete your account? This will wipe all your test data permanently.")) {
-              setIsDeleting(true);
-              try {
-                await api.deleteAccount(user.email);
-                logout();
-                navigate("/welcome", { replace: true });
-              } catch (err: any) {
-                console.error("Failed to delete account:", err);
-                let msg = "Failed to delete account. Please try again.";
-                try {
-                  const parsed = JSON.parse(err.message);
-                  if (parsed.error) msg = parsed.error;
-                } catch {
-                  // Ignore parse error, use generic message
-                }
-                alert(msg);
-                setIsDeleting(false);
-              }
-            }
-          }}
+          onClick={() => setConfirmDelete(true)}
           disabled={isDeleting}
           className={`flex items-center justify-center gap-2 rounded-2xl border border-salmon-alertBorder bg-transparent py-3 text-[14.5px] font-extrabold text-salmon-text transition-opacity ${isDeleting ? "opacity-50" : "hover:bg-salmon-alertBg"}`}
         >
           {isDeleting ? "Deleting..." : "Delete Account"}
         </button>
       </div>
+
+      <ConfirmSheet
+        open={confirmDelete}
+        title="Delete your account?"
+        message="This will wipe all your test data permanently. This can't be undone."
+        confirmLabel="Delete"
+        onConfirm={deleteAccount}
+        onCancel={() => setConfirmDelete(false)}
+      />
+
+      <Modal
+        open={!!deleteError}
+        variant="error"
+        title={hasRemainingBalance ? "Withdraw your balance first" : "Couldn't delete account"}
+        message={deleteError ?? ""}
+        onClose={() => setDeleteError(null)}
+        actions={
+          hasRemainingBalance
+            ? [
+                { label: "Withdraw Funds", onClick: () => navigate("/app/activity/withdraw"), variant: "primary" },
+                { label: "Cancel", onClick: () => setDeleteError(null), variant: "ghost" },
+              ]
+            : undefined
+        }
+      />
     </div>
   );
 }

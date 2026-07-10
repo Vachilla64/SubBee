@@ -1,10 +1,10 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 export default function EmptyState({
   title,
   message,
   cta,
-  mascot = '/illustrations/bee-waiting.png',
+  mascot = "/illustrations/bee-waiting.png",
 }: {
   title: string;
   message: string;

@@ -230,5 +230,38 @@ export const api = {
     const res = await fetch(`${API_BASE_URL}/ops/trust-metrics`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
     if (!res.ok) throw new Error(await res.text());
     return parseBigIntJSON(await res.text());
+  },
+
+  /**
+   * 10. WITHDRAWALS (Wallet -> external bank account)
+   * ---------------------------------------------------------
+   */
+  async getBanks() {
+    const res = await fetch(`${API_BASE_URL}/banks`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
+    if (!res.ok) throw new Error(await res.text());
+    // Returns: { banks: [{ code, name }] }
+    return res.json();
+  },
+
+  async lookupBankAccount(accountNumber: string, bankCode: string) {
+    const res = await fetch(`${API_BASE_URL}/withdraw/lookup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountNumber, bankCode })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    // Returns: { accountNumber, accountName }
+    return res.json();
+  },
+
+  // NOTE: amountNaira is expected here by the backend (it converts to Kobo internally)
+  async withdraw(email: string, amountNaira: number, accountNumber: string, bankCode: string, accountName: string) {
+    const res = await fetch(`${API_BASE_URL}/withdraw`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, amountNaira, accountNumber, bankCode, accountName })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return parseBigIntJSON(await res.text());
   }
 };

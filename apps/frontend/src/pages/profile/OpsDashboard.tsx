@@ -8,8 +8,8 @@ interface TrustMetrics {
   balanceIntegrity: string;
   zeroSum: string;
   overdraftCheck: string;
-  floatKobo: number;
-  poolKobo: number;
+  floatKobo: bigint;
+  poolKobo: bigint;
   stats: { usersCount: number; subsCount: number; ledgerCount: number };
 }
 
@@ -60,7 +60,7 @@ export default function OpsDashboard() {
               </div>
               <div className="rounded-2xl bg-white p-4 shadow-[0_3px_12px_rgba(20,40,45,0.05)]">
                 <div className="text-[11px] font-extrabold uppercase tracking-wide text-ink-faint">Nomba Pool</div>
-                <div className="tabular-nums mt-1 text-lg font-black text-ink">{formatNaira(Math.abs(metrics.poolKobo))}</div>
+                <div className="tabular-nums mt-1 text-lg font-black text-ink">{formatNaira(metrics.poolKobo < 0n ? -metrics.poolKobo : metrics.poolKobo)}</div>
               </div>
             </div>
 

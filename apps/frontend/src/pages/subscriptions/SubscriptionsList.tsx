@@ -48,30 +48,42 @@ export default function SubscriptionsList() {
             </button>
           </div>
         ) : (
-          subscriptions.map((sub) => {
-            const insufficient = isInsufficientFunds(sub, walletKobo);
-            return (
-              <div key={sub.id} className={insufficient ? 'overflow-hidden rounded-[18px] bg-white shadow-[0_3px_12px_rgba(20,40,45,0.05)]' : ''}>
-                <SubscriptionRow sub={sub} insufficient={insufficient} embedded={insufficient} />
-                {insufficient && (
-                  <div className="px-2.5 pb-2.5">
-                    <ActionRequiredCard
-                      merchantName={sub.merchantName}
-                      billKobo={sub.amountKobo}
-                      walletKobo={walletKobo}
-                      shortfallKobo={shortfallKobo(sub, walletKobo)}
-                      accountNumber={accountNumber}
-                      onTopUp={() =>
-                        navigate('/app/activity/fund', {
-                          state: { shortfallKobo: shortfallKobo(sub, walletKobo), merchantName: sub.merchantName },
-                        })
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })
+          <>
+            {subscriptions.map((sub) => {
+              const insufficient = isInsufficientFunds(sub, walletKobo);
+              return (
+                <div key={sub.id} className={insufficient ? 'overflow-hidden rounded-[18px] bg-white shadow-[0_3px_12px_rgba(20,40,45,0.05)]' : ''}>
+                  <SubscriptionRow sub={sub} insufficient={insufficient} embedded={insufficient} />
+                  {insufficient && (
+                    <div className="px-2.5 pb-2.5">
+                      <ActionRequiredCard
+                        merchantName={sub.merchantName}
+                        billKobo={sub.amountKobo}
+                        walletKobo={walletKobo}
+                        shortfallKobo={shortfallKobo(sub, walletKobo)}
+                        accountNumber={accountNumber}
+                        onTopUp={() =>
+                          navigate('/app/activity/fund', {
+                            state: { shortfallKobo: shortfallKobo(sub, walletKobo), merchantName: sub.merchantName },
+                          })
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            <button
+              onClick={() => navigate('/app/subscriptions/add')}
+              className="mt-1 flex items-center justify-center gap-2 rounded-[18px] border-2 border-dashed border-[#C4B58C] bg-[#F7F1E2] px-4 py-4 text-[14.5px] font-extrabold text-[#8A7A55] transition-colors hover:bg-[#F1E9D4]"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A7A55" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Add Subscription
+            </button>
+          </>
         )}
       </div>
     </div>

@@ -1,28 +1,39 @@
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../lib/auth';
-import { useWalletData } from '../../lib/useWalletData';
-import { daysUntil, formatNaira, formatShortDate, isInsufficientFunds, nextChargeDate, shortfallKobo } from '../../lib/format';
-import BalancePanel from '../../components/money/BalancePanel';
-import VirtualCardBlock from '../../components/money/VirtualCardBlock';
-import SubscriptionRow from '../../components/subscriptions/SubscriptionRow';
-import ActionRequiredCard from '../../components/subscriptions/ActionRequiredCard';
-import EmptyState from '../../components/ui/EmptyState';
-import Button from '../../components/ui/Button';
-import { SkeletonRows } from '../../components/ui/Skeleton';
-import { useState } from 'react';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { useAuth } from "../../lib/auth";
+import { useWalletData } from "../../lib/useWalletData";
+import { api } from "../../lib/api";
+import {
+  daysUntil,
+  formatNaira,
+  formatShortDate,
+  isInsufficientFunds,
+  nextChargeDate,
+  shortfallKobo,
+} from "../../lib/format";
+import BalancePanel from "../../components/money/BalancePanel";
+import VirtualCardBlock from "../../components/money/VirtualCardBlock";
+import SubscriptionRow from "../../components/subscriptions/SubscriptionRow";
+import ActionRequiredCard from "../../components/subscriptions/ActionRequiredCard";
+import EmptyState from "../../components/ui/EmptyState";
+import Button from "../../components/ui/Button";
+import Modal from "../../components/ui/Modal";
+import { SkeletonRows } from "../../components/ui/Skeleton";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 function greeting() {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning,';
-  if (h < 18) return 'Good afternoon,';
-  return 'Good evening,';
+  if (h < 12) return "Good morning,";
+  if (h < 18) return "Good afternoon,";
+  return "Good evening,";
 }
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { loading, walletKobo, card, subscriptions, accountNumber } = useWalletData();
+  const { loading, walletKobo, card, subscriptions, accountNumber, refetch } =
+    useWalletData();
 
   const activeSubs = subscriptions.filter((s) => s.isActive);
   const withDates = activeSubs
@@ -35,62 +46,138 @@ export default function Dashboard() {
 
   // If this is the initial load, the splash screen is playing (or just played).
   // We add a delay so the subscriptions slide up exactly when the splash screen finishes clearing.
-  const [isFirstLoad] = useState(() => !sessionStorage.getItem('subbee_splash_seen'));
+  const [isFirstLoad] = useState(
+    () => !sessionStorage.getItem("subbee_splash_seen"),
+  );
 
-  const [pendingSubs] = useState<any[]>(() => {
+  const [pendingSubs, setPendingSubs] = useState<any[]>(() => {
     try {
-      const stored = localStorage.getItem('subbee_pending_subs');
+      const stored = localStorage.getItem("subbee_pending_subs");
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
     }
   });
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [settingUp, setSettingUp] = useState(false);
+
+  // Subscriptions picked during signup are only ever staged in localStorage —
+  // nothing is actually created until the user has a working card. Once that's
+  // true, prompt them to finish setup instead of leaving dead "pending" rows
+  // that 404 when tapped.
+  useEffect(() => {
+    if (!loading && card.status !== "inactive" && pendingSubs.length > 0) {
+      setShowPendingModal(true);
+    }
+  }, [loading, card.status, pendingSubs.length]);
+
+  const clearPending = () => {
+    localStorage.removeItem("subbee_pending_subs");
+    setPendingSubs([]);
+    setShowPendingModal(false);
+  };
+
+  const autoSetupPending = async () => {
+    if (!user) return;
+    setSettingUp(true);
+    const results = await Promise.allSettled(
+      pendingSubs.map((p) =>
+        api.addSubscription({
+          email: user.email,
+          merchantId: p.service_id,
+          merchantName: p.service_name,
+          amountNaira: (p.amount ?? 0) / 100,
+          billingDay: Math.min(28, Math.max(1, new Date().getDate())),
+          remindersEnabled: true,
+        }),
+      ),
+    );
+    const succeeded = results.filter((r) => r.status === "fulfilled").length;
+    const total = pendingSubs.length;
+    setSettingUp(false);
+    clearPending();
+    await refetch();
+    if (succeeded === total) {
+      toast.success(`${succeeded} subscription${succeeded === 1 ? "" : "s"} set up!`);
+    } else if (succeeded > 0) {
+      toast.error(`${succeeded} of ${total} set up — add the rest anytime.`);
+    } else {
+      toast.error("Couldn't set those up automatically — add them manually anytime.");
+    }
+  };
+
+  const setUpManually = () => {
+    clearPending();
+    navigate("/app/subscriptions/add");
+  };
 
   // Animation variants for subscriptions sliding up
   const subsContainerVariants: Variants = {
     hidden: { opacity: 0, y: 50 },
-    show: { 
-      opacity: 1, 
-      y: 0, 
-      transition: { 
-        type: 'spring', 
-        stiffness: 70, 
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 70,
         damping: 15,
         delay: isFirstLoad ? 1.5 : 0, // Wait for splash screen to clear
-        staggerChildren: 0.1
-      } 
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   const subItemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
+    show: { opacity: 1, y: 0 },
   };
 
   return (
     <div>
       <div className="flex items-center justify-between px-5 pb-3.5 pt-6">
         <div>
-          <p className="text-[13px] font-semibold text-gold-text">{greeting()}</p>
-          <p className="text-[19px] font-extrabold text-ink">{user?.name?.split(' ')[0] ?? 'there'} 🐝</p>
+          <p className="text-[13px] font-semibold text-gold-text">
+            {greeting()}
+          </p>
+          <p className="text-[19px] font-extrabold text-ink">
+            {user?.name?.split(" ")[0] ?? "there"}🌻
+          </p>
         </div>
         <div className="flex gap-2.5">
           <button
-            onClick={() => navigate('/app/notifications')}
+            onClick={() => navigate("/app/notifications")}
             className="relative flex h-10 w-10 items-center justify-center rounded-[14px] bg-white shadow-[0_3px_10px_rgba(20,40,45,0.07)]"
             aria-label="Notifications"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E2A2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#1E2A2E"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.7 21a2 2 0 0 1-3.4 0" />
             </svg>
           </button>
           <button
-            onClick={() => navigate('/app/profile')}
+            onClick={() => navigate("/app/profile")}
             className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white shadow-[0_3px_10px_rgba(20,40,45,0.07)]"
             aria-label="Settings"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E2A2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#1E2A2E"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
@@ -99,24 +186,35 @@ export default function Dashboard() {
       </div>
 
       <div className="px-5">
-        {user?.kycStatus !== 'verified' && (
+        {user?.kycStatus !== "verified" && (
           <button
-            onClick={() => navigate('/kyc')}
+            onClick={() => navigate("/kyc")}
             className="mb-3 flex w-full items-center gap-2.5 rounded-2xl border border-gold-deep/30 bg-gold-light/25 px-4 py-3 text-left"
           >
             <span className="text-lg">🐝</span>
             <span className="text-[12.5px] font-bold leading-snug text-gold-text">
-              Verify your identity to unlock a virtual card — your wallet already works.
+              Verify your identity to unlock a virtual card — your wallet
+              already works.
             </span>
           </button>
         )}
 
-        {!loading && card.status === 'frozen' && (
+        {!loading && card.status === "frozen" && (
           <button
-            onClick={() => navigate('/app/card')}
+            onClick={() => navigate("/app/card")}
             className="mb-3 flex w-full items-center gap-2.5 rounded-2xl border border-salmon-alertBorder bg-salmon-alertBg px-4 py-3 text-left"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#C6543F"
+              strokeWidth="2.3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="shrink-0"
+            >
               <path d="M12 2v20M4.2 6.5l15.6 11M19.8 6.5L4.2 17.5" />
             </svg>
             <span className="text-[12.5px] font-bold leading-snug text-salmon-text">
@@ -132,13 +230,21 @@ export default function Dashboard() {
           reservedKobo={card.balanceKobo ?? 0n}
         />
 
-        {!loading && <VirtualCardBlock status={card.status} balanceKobo={card.balanceKobo} last4={card.last4} />}
+        {!loading && (
+          <VirtualCardBlock
+            status={card.status}
+            balanceKobo={card.balanceKobo}
+            last4={card.last4}
+          />
+        )}
 
-        {!loading && card.status !== 'inactive' && (
+        {!loading && card.status !== "inactive" && (
           <div className="relative mt-4.5 overflow-hidden rounded-card bg-white shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
             <div className="relative z-10 pt-4 px-4.5 pb-12">
               <div className="flex items-center justify-between">
-                <span className="text-[17px] font-extrabold text-ink">Upcoming Payments</span>
+                <span className="text-[17px] font-extrabold text-ink">
+                  Upcoming Payments
+                </span>
                 {nearest && (
                   <span className="rounded-full bg-[#F1EEE7] px-2.5 py-1 text-[11px] font-extrabold text-[#8A7A55]">
                     T-{Math.max(0, daysUntil(nearest.date))} days
@@ -151,7 +257,9 @@ export default function Dashboard() {
                   <SkeletonRows count={1} />
                 </div>
               ) : !nearest ? (
-                <p className="mt-2 text-[12.5px] font-semibold text-ink-muted">Add a subscription to see upcoming charges here.</p>
+                <p className="mt-2 text-[12.5px] font-semibold text-ink-muted">
+                  Add a subscription to see upcoming charges here.
+                </p>
               ) : nearestShort > 0n ? (
                 <div className="mt-2.5">
                   <ActionRequiredCard
@@ -161,14 +269,28 @@ export default function Dashboard() {
                     shortfallKobo={nearestShort}
                     accountNumber={accountNumber}
                     onTopUp={() =>
-                      navigate('/app/activity/fund', { state: { shortfallKobo: nearestShort, merchantName: nearest.sub.merchantName } })
+                      navigate("/app/activity/fund", {
+                        state: {
+                          shortfallKobo: nearestShort,
+                          merchantName: nearest.sub.merchantName,
+                        },
+                      })
                     }
                   />
                 </div>
               ) : (
                 <>
                   <div className="mt-1.5 flex items-center gap-1.5 text-[12.5px] font-bold text-active-text">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A8A5C" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#4A8A5C"
+                      strokeWidth="2.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M20 6L9 17l-5-5" />
                     </svg>
                     All upcoming subscriptions fully covered.
@@ -177,14 +299,23 @@ export default function Dashboard() {
                     <img
                       src={`/icons/${nearest.sub.merchantId}.png`}
                       alt=""
-                      onError={(e) => ((e.currentTarget as HTMLElement).style.visibility = 'hidden')}
+                      onError={(e) =>
+                        ((e.currentTarget as HTMLElement).style.visibility =
+                          "hidden")
+                      }
                       className="h-11 w-11 shrink-0 rounded-xl bg-ink/5 object-contain p-1"
                     />
                     <div className="flex-1">
-                      <div className="text-[15px] font-extrabold text-ink">{nearest.sub.merchantName}</div>
-                      <div className="text-[12.5px] font-semibold text-[#263339]">{formatShortDate(nearest.date)}</div>
+                      <div className="text-[15px] font-extrabold text-ink">
+                        {nearest.sub.merchantName}
+                      </div>
+                      <div className="text-[12.5px] font-semibold text-[#263339]">
+                        {formatShortDate(nearest.date)}
+                      </div>
                     </div>
-                    <span className="tabular-nums text-base font-extrabold text-ink">{formatNaira(nearest.sub.amountKobo)}</span>
+                    <span className="tabular-nums text-base font-extrabold text-ink">
+                      {formatNaira(nearest.sub.amountKobo)}
+                    </span>
                   </div>
                 </>
               )}
@@ -197,78 +328,115 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className={`flex items-center justify-between px-1 ${card.status === 'inactive' ? 'mt-7' : 'mt-4.5'}`}>
-          <span className="text-[17px] font-extrabold text-ink">My Subscriptions</span>
-          {subscriptions.length > 0 && (
-            <button onClick={() => navigate('/app/subscriptions')} className="text-[13px] font-extrabold text-teal">
+        <div
+          className={`flex items-center justify-between px-1 ${card.status === "inactive" ? "mt-7" : "mt-4.5"}`}
+        >
+          <span className="text-[17px] font-extrabold text-ink">
+            My Subscriptions
+          </span>
+          {(subscriptions.length > 0 || pendingSubs.length > 0) && (
+            <button
+              onClick={() => navigate("/app/subscriptions")}
+              className="text-[13px] font-extrabold text-teal"
+            >
               See all
             </button>
           )}
         </div>
 
         <AnimatePresence>
-          <motion.div 
+          <motion.div
             className="mt-2.5 flex flex-col gap-2.5 pb-4"
             variants={subsContainerVariants}
             initial="hidden"
             animate="show"
           >
             {loading ? (
-                <SkeletonRows count={3} />
-              ) : previewSubs.length === 0 && pendingSubs.length === 0 ? (
-                <EmptyState
-                  title="No subscriptions yet"
-                  message="Add your first subscription and SubBee takes it from here."
-                  cta={
-                    <Button onClick={() => navigate('/app/subscriptions/add')}>Add a subscription</Button>
-                  }
-                />
-              ) : (
-                [...previewSubs, ...(previewSubs.length === 0 ? pendingSubs.map((p, i) => ({
-                  id: `pending-${i}`,
-                  merchantId: p.service_id,
-                  merchantName: p.service_name,
-                  amountKobo: p.amount,
-                  isActive: false,
-                  billingDay: 1,
-                  isPending: true
-                })) : [])].map((sub: any) => {
-                  const insufficient = isInsufficientFunds(sub, walletKobo);
-                  return (
-                    <motion.div 
-                      key={sub.id} 
-                      variants={subItemVariants}
-                      className={insufficient ? 'overflow-hidden rounded-[18px] bg-white shadow-[0_3px_12px_rgba(20,40,45,0.05)]' : ''}
-                    >
-                      <SubscriptionRow 
-                        sub={sub} 
-                        insufficient={insufficient} 
-                        embedded={insufficient} 
-                        awaitingCard={card.status === 'inactive'} 
-                      />
-                      {insufficient && (
-                        <div className="px-2.5 pb-2.5">
-                          <ActionRequiredCard
-                            merchantName={sub.merchantName}
-                            billKobo={sub.amountKobo}
-                            walletKobo={walletKobo}
-                            shortfallKobo={shortfallKobo(sub, walletKobo)}
-                            accountNumber={accountNumber}
-                            onTopUp={() =>
-                              navigate('/app/activity/fund', {
-                                state: { shortfallKobo: shortfallKobo(sub, walletKobo), merchantName: sub.merchantName },
-                              })
-                            }
-                          />
-                        </div>
-                      )}
-                    </motion.div>
-                  );
-                })
+              <SkeletonRows count={3} />
+            ) : previewSubs.length === 0 && pendingSubs.length === 0 ? (
+              <EmptyState
+                title="No subscriptions yet"
+                message="Add your first subscription and SubBee takes it from here."
+                cta={
+                  <Button onClick={() => navigate("/app/subscriptions/add")}>
+                    Add a subscription
+                  </Button>
+                }
+              />
+            ) : (
+              [
+                ...previewSubs,
+                ...(previewSubs.length === 0
+                  ? pendingSubs.map((p, i) => ({
+                      id: `pending-${i}`,
+                      merchantId: p.service_id,
+                      merchantName: p.service_name,
+                      amountKobo: p.amount,
+                      isActive: false,
+                      billingDay: 1,
+                      isPending: true,
+                    }))
+                  : []),
+              ].map((sub: any) => {
+                const insufficient = isInsufficientFunds(sub, walletKobo);
+                return (
+                  <motion.div
+                    key={sub.id}
+                    variants={subItemVariants}
+                    className={
+                      insufficient
+                        ? "overflow-hidden rounded-[18px] bg-white shadow-[0_3px_12px_rgba(20,40,45,0.05)]"
+                        : ""
+                    }
+                  >
+                    <SubscriptionRow
+                      sub={sub}
+                      insufficient={insufficient}
+                      embedded={insufficient}
+                      awaitingCard={card.status === "inactive"}
+                      onClick={sub.isPending ? () => navigate("/app/subscriptions/add") : undefined}
+                    />
+                    {insufficient && (
+                      <div className="px-2.5 pb-2.5">
+                        <ActionRequiredCard
+                          merchantName={sub.merchantName}
+                          billKobo={sub.amountKobo}
+                          walletKobo={walletKobo}
+                          shortfallKobo={shortfallKobo(sub, walletKobo)}
+                          accountNumber={accountNumber}
+                          onTopUp={() =>
+                            navigate("/app/activity/fund", {
+                              state: {
+                                shortfallKobo: shortfallKobo(sub, walletKobo),
+                                merchantName: sub.merchantName,
+                              },
+                            })
+                          }
+                        />
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })
             )}
           </motion.div>
         </AnimatePresence>
       </div>
+
+      <Modal
+        open={showPendingModal}
+        variant="info"
+        title="Finish setting up your subscriptions"
+        message={`You picked ${pendingSubs.length} subscription${pendingSubs.length === 1 ? "" : "s"} during signup (${pendingSubs
+          .slice(0, 3)
+          .map((p) => p.service_name)
+          .join(", ")}${pendingSubs.length > 3 ? ` +${pendingSubs.length - 3} more` : ""}). Want SubBee to set them up automatically, or would you rather do it yourself?`}
+        onClose={() => setShowPendingModal(false)}
+        actions={[
+          { label: settingUp ? "Setting up…" : "Auto-setup all", onClick: autoSetupPending, variant: "primary", disabled: settingUp },
+          { label: "I'll set them up myself", onClick: setUpManually, variant: "ghost", disabled: settingUp },
+        ]}
+      />
     </div>
   );
 }
