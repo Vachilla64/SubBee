@@ -28,6 +28,7 @@ export interface CardSecureDetails {
   cvv: string;
   expiryMonth: string;
   expiryYear: string;
+  last4?: string;
 }
 
 class BridgecardClient {
@@ -161,12 +162,16 @@ class BridgecardClient {
     });
 
     const result = await this.handleResponse<{ data: { card_id: string; last_4?: string; card_brand?: string } }>(response, 'createVirtualCard');
-    
+
+    // create_card's response never actually includes last_4 (only card_id + currency
+    // per Bridgecard's docs) — this fallback is the normal path, not an edge case.
     let actualLast4 = result.data.last_4 || '';
     if (!actualLast4 || actualLast4 === '0000' || actualLast4.length < 4) {
       try {
         const details = await this.getCardSecureDetails(result.data.card_id);
-        if (details.pan && details.pan.length >= 4) {
+        if (details.last4 && details.last4.length >= 4) {
+          actualLast4 = details.last4;
+        } else if (details.pan && details.pan.length >= 4) {
           actualLast4 = details.pan.slice(-4);
         } else {
           actualLast4 = '0000';
@@ -210,11 +215,14 @@ class BridgecardClient {
     });
 
     const result = await this.handleResponse<{ data: Record<string, string> }>(response, 'getCardSecureDetails');
+    // Bridgecard's field is `card_number`, not `pan` — getting this wrong means
+    // every reveal silently returns an empty string instead of erroring.
     return {
-      pan: result.data['pan'] ?? '',
+      pan: result.data['card_number'] ?? '',
       cvv: result.data['cvv'] ?? '',
       expiryMonth: result.data['expiry_month'] ?? '',
-      expiryYear: result.data['expiry_year'] ?? ''
+      expiryYear: result.data['expiry_year'] ?? '',
+      last4: result.data['last_4'] || undefined
     };
   }
 

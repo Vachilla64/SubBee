@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../lib/auth";
 import { useWalletData } from "../../lib/useWalletData";
 import { api } from "../../lib/api";
 import { formatNaira } from "../../lib/format";
 import TopBar from "../../components/layout/TopBar";
 import Button from "../../components/ui/Button";
+import BottomSheet from "../../components/ui/BottomSheet";
 
 export default function FundWallet() {
   const { user } = useAuth();
@@ -170,72 +170,51 @@ export default function FundWallet() {
         </div>
       </div>
 
-      <AnimatePresence>
-        {fundedAmount !== null && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 backdrop-blur-[2px] sm:items-center px-4 pb-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0"
-              onClick={() => setFundedAmount(null)}
-            />
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative w-full max-w-[440px] rounded-[32px] bg-[#FBF8EF] px-6 pb-8 pt-4 shadow-2xl"
+      <BottomSheet open={fundedAmount !== null} onClose={() => setFundedAmount(null)}>
+        <div className="flex flex-col items-center text-center">
+          <img
+            src="/illustrations/subbee-logo.png"
+            alt="Happy Bee"
+            className="h-32 w-32 object-contain animate-float"
+          />
+
+          <div className="mt-4 flex items-center gap-1.5 rounded-full border border-[#B6E0BE] bg-[#EAF7ED] px-3 py-1 text-[12px] font-extrabold text-[#4A8A5C]">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <div className="mx-auto mb-6 h-1 w-12 rounded-full bg-[#E5DDCB]" />
-
-              <div className="flex flex-col items-center text-center">
-                <img
-                  src="/illustrations/subbee-logo.png"
-                  alt="Happy Bee"
-                  className="h-32 w-32 object-contain animate-float"
-                />
-
-                <div className="mt-4 flex items-center gap-1.5 rounded-full border border-[#B6E0BE] bg-[#EAF7ED] px-3 py-1 text-[12px] font-extrabold text-[#4A8A5C]">
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  Funded
-                </div>
-
-                <h2 className="mt-5 text-[22px] font-black tracking-tight text-ink">
-                  Wallet Funded Successfully!
-                </h2>
-
-                <p className="mt-2 text-[14px] font-medium leading-relaxed text-ink-muted px-2">
-                  <span className="font-bold text-ink">
-                    {formatNaira(fundedAmount * 100)}
-                  </span>{" "}
-                  just landed in your wallet. Reserved amounts are covered and
-                  ready.
-                </p>
-
-                <Button
-                  fullWidth
-                  onClick={() => navigate("/app/dashboard")}
-                  className="mt-8 !h-[54px] !bg-gradient-to-br !from-[#F2CE7C] !to-[#E7B84F] !text-[#3B2C12] shadow-[0_4px_14px_rgba(231,184,79,0.3)] !text-[16px]"
-                >
-                  Back to Dashboard
-                </Button>
-              </div>
-            </motion.div>
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Funded
           </div>
-        )}
-      </AnimatePresence>
+
+          <h2 className="mt-5 text-[22px] font-black tracking-tight text-ink">
+            Wallet Funded Successfully!
+          </h2>
+
+          <p className="mt-2 text-[14px] font-medium leading-relaxed text-ink-muted px-2">
+            <span className="font-bold text-ink">
+              {fundedAmount !== null ? formatNaira(fundedAmount * 100) : ""}
+            </span>{" "}
+            just landed in your wallet. Reserved amounts are covered and
+            ready.
+          </p>
+
+          <Button
+            fullWidth
+            onClick={() => navigate("/app/dashboard")}
+            className="mt-8 !h-[54px] !bg-gradient-to-br !from-[#F2CE7C] !to-[#E7B84F] !text-[#3B2C12] shadow-[0_4px_14px_rgba(231,184,79,0.3)] !text-[16px]"
+          >
+            Back to Dashboard
+          </Button>
+        </div>
+      </BottomSheet>
     </div>
   );
 }

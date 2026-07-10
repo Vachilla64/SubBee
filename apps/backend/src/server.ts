@@ -714,6 +714,22 @@ app.get('/api/card', async (req: Request, res: Response) => {
     }
     const card = cardRes.rows[0];
 
+    // Self-heal cards created before the getCardSecureDetails field-name fix,
+    // whose last4 got permanently stuck at the '0000' fallback.
+    let last4 = card.last4;
+    if ((!last4 || last4 === '0000') && card.bridgecard_card_id) {
+      try {
+        const details = await bridgecard.getCardSecureDetails(card.bridgecard_card_id);
+        const fixed = details.last4 || (details.pan.length >= 4 ? details.pan.slice(-4) : null);
+        if (fixed && fixed !== last4) {
+          await db.query('UPDATE cards SET last4 = $1 WHERE id = $2', [fixed, card.id]);
+          last4 = fixed;
+        }
+      } catch (err: any) {
+        console.warn('[api/card/get] Failed to self-heal last4:', err.message || err);
+      }
+    }
+
     // Get card balance from ledger
     const balanceRes = await db.query(
       "SELECT current_balance FROM ledger_accounts WHERE user_id = $1 AND type = 'card'",
@@ -724,7 +740,7 @@ app.get('/api/card', async (req: Request, res: Response) => {
     res.json({
       status: card.status,
       cardId: card.bridgecard_card_id,
-      last4: card.last4,
+      last4,
       brand: card.brand,
       balanceKobo
     });

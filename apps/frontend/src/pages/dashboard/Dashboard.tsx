@@ -14,7 +14,7 @@ import {
 import BalancePanel from "../../components/money/BalancePanel";
 import VirtualCardBlock from "../../components/money/VirtualCardBlock";
 import SubscriptionRow from "../../components/subscriptions/SubscriptionRow";
-import ActionRequiredCard from "../../components/subscriptions/ActionRequiredCard";
+import SubscriptionActionSheet from "../../components/subscriptions/SubscriptionActionSheet";
 import EmptyState from "../../components/ui/EmptyState";
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
@@ -32,7 +32,7 @@ function greeting() {
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { loading, walletKobo, card, subscriptions, accountNumber, refetch } =
+  const { loading, walletKobo, card, subscriptions, refetch } =
     useWalletData();
 
   const activeSubs = subscriptions.filter((s) => s.isActive);
@@ -60,6 +60,7 @@ export default function Dashboard() {
   });
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [settingUp, setSettingUp] = useState(false);
+  const [actionSheetSub, setActionSheetSub] = useState<any | null>(null);
 
   // Subscriptions picked during signup are only ever staged in localStorage —
   // nothing is actually created until the user has a working card. Once that's
@@ -260,42 +261,50 @@ export default function Dashboard() {
                 <p className="mt-2 text-[12.5px] font-semibold text-ink-muted">
                   Add a subscription to see upcoming charges here.
                 </p>
-              ) : nearestShort > 0n ? (
-                <div className="mt-2.5">
-                  <ActionRequiredCard
-                    merchantName={nearest.sub.merchantName}
-                    billKobo={nearest.sub.amountKobo}
-                    walletKobo={walletKobo}
-                    shortfallKobo={nearestShort}
-                    accountNumber={accountNumber}
-                    onTopUp={() =>
-                      navigate("/app/activity/fund", {
-                        state: {
-                          shortfallKobo: nearestShort,
-                          merchantName: nearest.sub.merchantName,
-                        },
-                      })
-                    }
-                  />
-                </div>
               ) : (
                 <>
-                  <div className="mt-1.5 flex items-center gap-1.5 text-[12.5px] font-bold text-active-text">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#4A8A5C"
-                      strokeWidth="2.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M20 6L9 17l-5-5" />
-                    </svg>
-                    All upcoming subscriptions fully covered.
+                  <div
+                    className={`mt-1.5 flex items-center gap-1.5 text-[12.5px] font-bold ${
+                      nearestShort > 0n ? "text-salmon-text" : "text-active-text"
+                    }`}
+                  >
+                    {nearestShort > 0n ? (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#C6543F"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                    ) : (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#4A8A5C"
+                        strokeWidth="2.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    )}
+                    {nearestShort > 0n
+                      ? `Short ${formatNaira(nearestShort)} — tap to top up`
+                      : "All upcoming subscriptions fully covered."}
                   </div>
-                  <div className="mt-3 flex items-center gap-3">
+                  <button
+                    onClick={() => setActionSheetSub(nearest.sub)}
+                    className="mt-3 flex w-full items-center gap-3 text-left"
+                  >
                     <img
                       src={`/icons/${nearest.sub.merchantId}.png`}
                       alt=""
@@ -316,7 +325,7 @@ export default function Dashboard() {
                     <span className="tabular-nums text-base font-extrabold text-ink">
                       {formatNaira(nearest.sub.amountKobo)}
                     </span>
-                  </div>
+                  </button>
                 </>
               )}
             </div>
@@ -380,41 +389,17 @@ export default function Dashboard() {
               ].map((sub: any) => {
                 const insufficient = isInsufficientFunds(sub, walletKobo);
                 return (
-                  <motion.div
-                    key={sub.id}
-                    variants={subItemVariants}
-                    className={
-                      insufficient
-                        ? "overflow-hidden rounded-[18px] bg-white shadow-[0_3px_12px_rgba(20,40,45,0.05)]"
-                        : ""
-                    }
-                  >
+                  <motion.div key={sub.id} variants={subItemVariants}>
                     <SubscriptionRow
                       sub={sub}
                       insufficient={insufficient}
-                      embedded={insufficient}
                       awaitingCard={card.status === "inactive"}
-                      onClick={sub.isPending ? () => navigate("/app/subscriptions/add") : undefined}
+                      onClick={
+                        sub.isPending
+                          ? () => navigate("/app/subscriptions/add")
+                          : () => setActionSheetSub(sub)
+                      }
                     />
-                    {insufficient && (
-                      <div className="px-2.5 pb-2.5">
-                        <ActionRequiredCard
-                          merchantName={sub.merchantName}
-                          billKobo={sub.amountKobo}
-                          walletKobo={walletKobo}
-                          shortfallKobo={shortfallKobo(sub, walletKobo)}
-                          accountNumber={accountNumber}
-                          onTopUp={() =>
-                            navigate("/app/activity/fund", {
-                              state: {
-                                shortfallKobo: shortfallKobo(sub, walletKobo),
-                                merchantName: sub.merchantName,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                    )}
                   </motion.div>
                 );
               })
@@ -436,6 +421,14 @@ export default function Dashboard() {
           { label: settingUp ? "Setting up…" : "Auto-setup all", onClick: autoSetupPending, variant: "primary", disabled: settingUp },
           { label: "I'll set them up myself", onClick: setUpManually, variant: "ghost", disabled: settingUp },
         ]}
+      />
+
+      <SubscriptionActionSheet
+        sub={actionSheetSub}
+        walletKobo={walletKobo}
+        awaitingCard={card.status === "inactive"}
+        onClose={() => setActionSheetSub(null)}
+        onChanged={refetch}
       />
     </div>
   );

@@ -2,14 +2,13 @@ import { useNavigate } from 'react-router-dom';
 import TopBar from '../../components/layout/TopBar';
 
 import SubscriptionRow from '../../components/subscriptions/SubscriptionRow';
-import ActionRequiredCard from '../../components/subscriptions/ActionRequiredCard';
 import { SkeletonRows } from '../../components/ui/Skeleton';
 import { useWalletData } from '../../lib/useWalletData';
-import { isInsufficientFunds, shortfallKobo } from '../../lib/format';
+import { isInsufficientFunds } from '../../lib/format';
 
 export default function SubscriptionsList() {
   const navigate = useNavigate();
-  const { loading, subscriptions, walletKobo, accountNumber } = useWalletData();
+  const { loading, subscriptions, walletKobo } = useWalletData();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -49,30 +48,9 @@ export default function SubscriptionsList() {
           </div>
         ) : (
           <>
-            {subscriptions.map((sub) => {
-              const insufficient = isInsufficientFunds(sub, walletKobo);
-              return (
-                <div key={sub.id} className={insufficient ? 'overflow-hidden rounded-[18px] bg-white shadow-[0_3px_12px_rgba(20,40,45,0.05)]' : ''}>
-                  <SubscriptionRow sub={sub} insufficient={insufficient} embedded={insufficient} />
-                  {insufficient && (
-                    <div className="px-2.5 pb-2.5">
-                      <ActionRequiredCard
-                        merchantName={sub.merchantName}
-                        billKobo={sub.amountKobo}
-                        walletKobo={walletKobo}
-                        shortfallKobo={shortfallKobo(sub, walletKobo)}
-                        accountNumber={accountNumber}
-                        onTopUp={() =>
-                          navigate('/app/activity/fund', {
-                            state: { shortfallKobo: shortfallKobo(sub, walletKobo), merchantName: sub.merchantName },
-                          })
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {subscriptions.map((sub) => (
+              <SubscriptionRow key={sub.id} sub={sub} insufficient={isInsufficientFunds(sub, walletKobo)} />
+            ))}
 
             <button
               onClick={() => navigate('/app/subscriptions/add')}
