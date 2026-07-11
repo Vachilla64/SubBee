@@ -158,12 +158,12 @@ export default function WelcomePro() {
               initial={{ opacity: 0, x: -18 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.9 + i * 0.13, duration: 0.5, ease: 'easeOut' }}
-              className="flex items-center gap-3 rounded-2xl border border-white/50 bg-white/70 px-4 py-3 shadow-[0_10px_24px_rgba(0,0,0,0.14)] backdrop-blur-xl"
+              className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 shadow-sm backdrop-blur-md"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAF3F0]">{perk.icon}</div>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-white">{perk.icon}</div>
               <div>
-                <div className="text-[13.5px] font-extrabold text-ink">{perk.title}</div>
-                <div className="text-[11.5px] font-semibold text-ink-muted leading-snug">{perk.desc}</div>
+                <div className="text-[13.5px] font-extrabold text-white">{perk.title}</div>
+                <div className="text-[11.5px] font-semibold text-white/80 leading-snug">{perk.desc}</div>
               </div>
             </motion.div>
           ))}

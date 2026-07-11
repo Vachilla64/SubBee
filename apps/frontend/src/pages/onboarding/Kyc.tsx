@@ -23,6 +23,15 @@ const formVariants = {
   exit: (direction: number) => ({ x: direction < 0 ? 50 : -50, opacity: 0 }),
 };
 
+const HIVE_SPARKLES = [
+  { left: '10%', top: '20%', size: 6, duration: 3.2, delay: 0 },
+  { left: '86%', top: '16%', size: 5, duration: 3.6, delay: 0.4 },
+  { left: '18%', top: '70%', size: 4, duration: 2.8, delay: 0.8 },
+  { left: '90%', top: '64%', size: 6, duration: 3.4, delay: 0.2 },
+  { left: '6%', top: '45%', size: 4, duration: 3, delay: 1.1 },
+  { left: '80%', top: '84%', size: 5, duration: 3.8, delay: 0.6 },
+];
+
 export default function Kyc() {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
@@ -218,13 +227,18 @@ export default function Kyc() {
       setCeremonyPhase("boom");
 
       // Fire confetti burst!
+      const hiveColors = ["#2E6264", "#E7C97E", "#1C4042", "#EB001B", "#F79E1B"];
       confetti({
         particleCount: 150,
         spread: 80,
         origin: { y: 0.6 },
-        colors: ["#2E6264", "#E7C97E", "#1C4042", "#EB001B", "#F79E1B"],
+        colors: hiveColors,
         zIndex: 9999,
       });
+      setTimeout(() => {
+        confetti({ particleCount: 45, angle: 60, spread: 60, origin: { x: 0, y: 0.6 }, colors: hiveColors, zIndex: 9999 });
+        confetti({ particleCount: 45, angle: 120, spread: 60, origin: { x: 1, y: 0.6 }, colors: hiveColors, zIndex: 9999 });
+      }, 350);
     }, 3500); // Wait 3.5s for the choreograph to finish
   };
 
@@ -235,10 +249,12 @@ export default function Kyc() {
         ? Boolean(form.firstName.trim() && form.lastName.trim() && form.dob)
         : step === 3
           ? Boolean(
-              form.phone.trim().length >= 7 &&
+              form.phone.trim().length >= 10 &&
+              form.phone.startsWith("+") &&
               form.address.trim() &&
               form.state &&
-              form.lga.trim(),
+              form.lga.trim() &&
+              form.postalCode.trim()
             )
           : step === 4
             ? Boolean(form.bvn.length === 11)
@@ -607,24 +623,80 @@ export default function Kyc() {
               </motion.div>
             </div>
           ) : ceremonyPhase === "boom" ? (
-            <div className="flex flex-col items-center justify-center flex-1 text-center w-full animate-in fade-in zoom-in duration-500">
-              <div className="relative w-[184px] h-[184px] flex items-center justify-center mt-8">
-                <div className="absolute inset-0 overflow-clip rounded-full bg-[#E5F3ED]">
+            <div className="relative flex flex-col items-center justify-center flex-1 text-center w-full overflow-hidden">
+              {HIVE_SPARKLES.map((s, i) => (
+                <motion.span
+                  key={i}
+                  className="pointer-events-none absolute rounded-full bg-gold shadow-[0_0_8px_rgba(231,184,79,0.8)]"
+                  style={{ left: s.left, top: s.top, width: s.size, height: s.size }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0.15, 1, 0.15], y: [0, -12, 0] }}
+                  transition={{ duration: s.duration, delay: s.delay, repeat: Infinity, ease: "easeInOut" }}
+                />
+              ))}
+
+              <motion.div
+                initial={{ scale: 0.3, opacity: 0, rotate: -15 }}
+                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 240, damping: 15, delay: 0.1 }}
+                className="relative w-[184px] h-[184px] flex items-center justify-center mt-8"
+              >
+                <div
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    background: "radial-gradient(circle at 50% 45%, rgba(231,184,79,0.35), rgba(231,184,79,0.08) 60%, rgba(231,184,79,0) 75%)",
+                  }}
+                />
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+                  className="relative w-full h-full overflow-clip rounded-full border-[4px] border-white bg-[#E5F3ED] shadow-[0_16px_34px_-12px_rgba(46,98,100,0.55)]"
+                >
                   <img
                     src="/illustrations/bee-peek.png"
                     alt=""
                     className="w-full h-full object-fill relative z-10 scale-110"
                   />
-                </div>
-              </div>
-              <h1 className="text-[32px] font-black tracking-tight text-ink mt-6 leading-tight">
-                Welcome to the Hive <br /> {user?.name}!🌻
-              </h1>
-              <p className="mt-3 text-[15px] font-semibold text-ink-muted max-w-xs leading-relaxed">
+                </motion.div>
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.7, type: "spring", stiffness: 420, damping: 14 }}
+                  className="absolute -bottom-1 -right-1 flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-white bg-[#3E9B62] shadow-[0_6px_14px_rgba(62,155,98,0.5)]"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                </motion.div>
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.6, ease: "easeOut" }}
+                className="text-[32px] font-black tracking-tight text-ink mt-6 leading-tight"
+              >
+                Welcome to the Hive
+                <br />
+                {user?.name}!
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.65, duration: 0.6, ease: "easeOut" }}
+                className="mt-3 text-[15px] font-semibold text-ink-muted max-w-xs leading-relaxed"
+              >
                 Your virtual Mastercard is locked, loaded, and ready to handle
                 your subscriptions.
-              </p>
-              <div className="mt-10 mb-4 flex flex-col w-full max-w-sm gap-3.5 px-2">
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 22 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.85, duration: 0.6, ease: "easeOut" }}
+                className="mt-10 mb-4 flex flex-col w-full max-w-sm gap-3.5 px-2"
+              >
                 <Button
                   onClick={() => navigate("/app/card")}
                   className="!h-14 !text-[16px] !bg-teal text-white shadow-[0_12px_22px_-10px_rgba(46,98,100,0.8)] transition-transform hover:scale-[1.02] active:scale-95"
@@ -637,7 +709,7 @@ export default function Kyc() {
                 >
                   Continue to Dashboard
                 </button>
-              </div>
+              </motion.div>
             </div>
           ) : (
             <div className="flex flex-col items-center flex-1 w-full">
@@ -1012,9 +1084,16 @@ export default function Kyc() {
                   <TextField
                     label="Phone number"
                     type="tel"
+                    placeholder="+234..."
                     required
                     value={form.phone}
-                    onChange={(e) => set("phone", e.target.value)}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/[^\d+]/g, "");
+                      if (val.startsWith("0")) val = "+234" + val.slice(1);
+                      else if (val.startsWith("234")) val = "+" + val;
+                      else if (val.length > 0 && !val.startsWith("+")) val = "+" + val;
+                      set("phone", val);
+                    }}
                   />
                   <TextField
                     label="Street address"
@@ -1049,6 +1128,13 @@ export default function Kyc() {
                       onChange={(e) => set("lga", e.target.value)}
                     />
                   </div>
+                  <TextField
+                    label="Postal code"
+                    inputMode="numeric"
+                    required
+                    value={form.postalCode}
+                    onChange={(e) => set("postalCode", e.target.value.replace(/\D/g, ""))}
+                  />
                 </div>
                 <div className="mt-auto mb-6 w-full">
                   <Button
