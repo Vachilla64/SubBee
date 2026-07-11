@@ -5,12 +5,7 @@ export default function NotificationCenter() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAF3E1]">
-      <div 
-        className="pb-4 pt-10"
-        style={{
-          backgroundImage: `url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2228%22 height=%2249%22 viewBox=%220 0 28 49%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.05%22%3E%3Cpath d=%22M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9z%22/%3E%3C/g%3E%3C/svg%3E'), linear-gradient(160deg, #2E6264 0%, #1C4042 55%, #143032 100%)`
-        }}
-      >
+      <div className="teal-card-gradient pb-4 pt-10">
         <div className="flex items-center gap-3 px-5 pt-1">
           <button 
             onClick={() => navigate(-1)}
@@ -44,80 +39,56 @@ export default function NotificationCenter() {
           <div className="flex items-center text-[13px] font-black tracking-[0.4px] text-[#8A7A55]">Today</div>
         </div>
 
-        {/* unread: funding failure */}
-        <div className="flex items-stretch gap-3.5">
-          <div className="relative flex w-[42px] shrink-0 flex-col items-center">
-            <div className="absolute bottom-[-16px] left-[calc(50%-1px)] top-[44px] border-l-2 border-dashed border-[#D6C288]"></div>
-            <div className="relative z-10 flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px] bg-[#FBD9CE] shadow-[0_0_0_4px_#FAF3E1]">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C6543F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-            </div>
-          </div>
-          <div className="relative min-w-0 flex-1 pt-[1px]">
-            <div className="flex items-center gap-[7px]">
-              <span className="text-[14.5px] font-black text-[#B24A3C]">Payment couldn't go through</span>
-              <span className="h-2 w-2 shrink-0 rounded-full bg-[#E7B84F]"></span>
-            </div>
-            <div className="mt-[2px] text-[12.5px] font-semibold leading-[1.4] text-[#5A4A46]">Amazon Prime needs ₦350 more. Top up to keep it active.</div>
-            <div className="mt-[5px] text-[11px] font-bold text-[#B0968E]">2 min ago</div>
-          </div>
-        </div>
-
-        {/* unread: deposit received */}
+        {/* unread: welcome */}
         <div className="flex items-stretch gap-3.5">
           <div className="relative flex w-[42px] shrink-0 flex-col items-center">
             <div className="absolute bottom-[-16px] left-[calc(50%-1px)] top-[44px] border-l-2 border-dashed border-[#D6C288]"></div>
             <div className="relative z-10 flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px] shadow-[0_0_0_4px_#FAF3E1]" style={{ background: 'linear-gradient(165deg,#F3D084,#E1AC46)' }}>
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#3A2A0E" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
-            </div>
-          </div>
-          <div className="relative min-w-0 flex-1 pt-[1px]">
-            <div className="flex items-center gap-[7px]">
-              <span className="text-[14.5px] font-black text-[#1E2A2E]">Wallet funded</span>
-              <span className="h-2 w-2 shrink-0 rounded-full bg-[#E7B84F]"></span>
-            </div>
-            <div className="mt-[2px] text-[12.5px] font-semibold leading-[1.4] text-[#5F6B6F]">
-              <b className="text-[#2E7D50]">+₦50,000.00</b> landed from your bank transfer.
-            </div>
-            <div className="mt-[5px] text-[11px] font-bold text-[#A6ADB0]">9:30 AM</div>
-          </div>
-        </div>
-
-        {/* read: payment success */}
-        <div className="flex items-stretch gap-3.5">
-          <div className="relative flex w-[42px] shrink-0 flex-col items-center">
-            <div className="absolute bottom-[-16px] left-[calc(50%-1px)] top-[44px] border-l-2 border-dashed border-[#D6C288]"></div>
-            <div className="relative z-10 flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px] bg-[#1A1A1A] shadow-[0_0_0_4px_#FAF3E1]">
-              <span className="text-[22px] font-black text-[#E50914]" style={{ fontFamily: 'Georgia,serif' }}>N</span>
-            </div>
-          </div>
-          <div className="relative min-w-0 flex-1 pt-[1px]">
-            <div className="text-[14.5px] font-extrabold text-[#1E2A2E]">Netflix paid successfully</div>
-            <div className="mt-[2px] text-[12.5px] font-semibold leading-[1.4] text-[#8A9499]">₦4,900.00 charged. Receipt saved to Activity.</div>
-            <div className="mt-[5px] text-[11px] font-bold text-[#A6ADB0]">6:00 AM</div>
-          </div>
-        </div>
-
-        {/* date marker: Earlier this week */}
-        <div className="flex items-stretch gap-3.5">
-          <div className="relative flex w-[42px] shrink-0 flex-col items-center">
-            <div className="absolute bottom-[-16px] left-[calc(50%-1px)] top-[24px] border-l-2 border-dashed border-[#D6C288]"></div>
-            <div className="relative z-10 mt-[3px] h-[15px] w-[15px] rotate-45 rounded-[3px] bg-[#E7B84F] shadow-[0_0_0_5px_#FAF3E1]"></div>
-          </div>
-          <div className="flex items-center text-[13px] font-black tracking-[0.4px] text-[#8A7A55]">Earlier this week</div>
-        </div>
-
-        {/* read: card auto-funded */}
-        <div className="flex items-stretch gap-3.5">
-          <div className="relative flex w-[42px] shrink-0 flex-col items-center">
-            <div className="absolute bottom-[-16px] left-[calc(50%-1px)] top-[44px] border-l-2 border-dashed border-[#D6C288]"></div>
-            <div className="relative z-10 flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px] bg-[#E8F1EC] shadow-[0_0_0_4px_#FAF3E1]">
               <img src="/illustrations/subbee-logo.png" alt="" className="h-[28px] w-[30px] object-contain" />
             </div>
           </div>
           <div className="relative min-w-0 flex-1 pt-[1px]">
-            <div className="text-[14.5px] font-extrabold text-[#1E2A2E]">Card topped up just in time</div>
-            <div className="mt-[2px] text-[12.5px] font-semibold leading-[1.4] text-[#8A9499]">We moved ₦15,000 to your card to cover DStv Compact.</div>
-            <div className="mt-[5px] text-[11px] font-bold text-[#A6ADB0]">Jun 27</div>
+            <div className="flex items-center gap-[7px]">
+              <span className="text-[14.5px] font-black text-[#1E2A2E]">Welcome to SubBee! 🐝</span>
+              <span className="h-2 w-2 shrink-0 rounded-full bg-[#E7B84F]"></span>
+            </div>
+            <div className="mt-[2px] text-[12.5px] font-semibold leading-[1.4] text-[#5F6B6F]">Your account is fully set up. Add your first subscription to get started.</div>
+            <div className="mt-[5px] text-[11px] font-bold text-[#A6ADB0]">Just now</div>
+          </div>
+        </div>
+
+        {/* unread: pro activated */}
+        <div className="flex items-stretch gap-3.5">
+          <div className="relative flex w-[42px] shrink-0 flex-col items-center">
+            <div className="absolute bottom-[-16px] left-[calc(50%-1px)] top-[44px] border-l-2 border-dashed border-[#D6C288]"></div>
+            <div className="relative z-10 flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px] bg-[#1C4042] shadow-[0_0_0_4px_#FAF3E1]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E7B84F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+            </div>
+          </div>
+          <div className="relative min-w-0 flex-1 pt-[1px]">
+            <div className="flex items-center gap-[7px]">
+              <span className="text-[14.5px] font-black text-[#1E2A2E]">SubBee Pro Activated</span>
+              <span className="h-2 w-2 shrink-0 rounded-full bg-[#E7B84F]"></span>
+            </div>
+            <div className="mt-[2px] text-[12.5px] font-semibold leading-[1.4] text-[#5F6B6F]">You now have access to unlimited subscriptions and priority alerts.</div>
+            <div className="mt-[5px] text-[11px] font-bold text-[#A6ADB0]">2 min ago</div>
+          </div>
+        </div>
+
+        {/* read: deposit received */}
+        <div className="flex items-stretch gap-3.5">
+          <div className="relative flex w-[42px] shrink-0 flex-col items-center">
+            <div className="absolute bottom-[-16px] left-[calc(50%-1px)] top-[44px] border-l-2 border-dashed border-[#D6C288]"></div>
+            <div className="relative z-10 flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px] bg-[#E8F1EC] shadow-[0_0_0_4px_#FAF3E1]">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#3E6247" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+            </div>
+          </div>
+          <div className="relative min-w-0 flex-1 pt-[1px]">
+            <div className="text-[14.5px] font-extrabold text-[#1E2A2E]">Wallet funded</div>
+            <div className="mt-[2px] text-[12.5px] font-semibold leading-[1.4] text-[#8A9499]">
+              <b className="text-[#2E7D50]">+₦5,000.00</b> landed from your bank transfer.
+            </div>
+            <div className="mt-[5px] text-[11px] font-bold text-[#A6ADB0]">1 hr ago</div>
           </div>
         </div>
 
@@ -132,7 +103,7 @@ export default function NotificationCenter() {
           <div className="relative min-w-0 flex-1 pt-[1px]">
             <div className="text-[14.5px] font-extrabold text-[#1E2A2E]">Identity verified</div>
             <div className="mt-[2px] text-[12.5px] font-semibold leading-[1.4] text-[#8A9499]">Your card and wallet are fully unlocked. Welcome aboard!</div>
-            <div className="mt-[5px] text-[11px] font-bold text-[#A6ADB0]">Jun 24</div>
+            <div className="mt-[5px] text-[11px] font-bold text-[#A6ADB0]">2 hrs ago</div>
           </div>
         </div>
 

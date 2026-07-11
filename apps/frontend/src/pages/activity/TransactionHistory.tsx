@@ -51,7 +51,7 @@ export default function TransactionHistory() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FDF7EC]">
-      <div className="bg-gradient-to-br from-[#2E6264] via-[#1C4042] to-[#143032] pb-4 pt-10">
+      <div className="teal-card-gradient pb-4 pt-10">
         <div className="flex flex-col items-center gap-0.5 mt-2">
           <img src="/illustrations/subbee-logo.png" alt="" className="h-7 w-8 object-contain drop-shadow-sm" />
           <span className="text-[19px] font-black text-gold-light tracking-tight">Activity</span>
