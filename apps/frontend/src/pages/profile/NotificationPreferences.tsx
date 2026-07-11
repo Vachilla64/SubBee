@@ -24,7 +24,7 @@ export default function NotificationPreferences() {
 
         <div className="mb-2 flex items-center justify-between pl-1">
           <span className="text-[11px] font-extrabold uppercase tracking-wide text-ink-faint">Notifications</span>
-          <span className="flex items-center gap-1 text-[11px] font-extrabold text-[#2A7DA8]">via Telegram</span>
+          <span className="flex items-center gap-1 text-[11px] font-extrabold text-[#2A7DA8]">via Telegram & WhatsApp</span>
         </div>
         <div className="overflow-hidden rounded-[18px] bg-white shadow-[0_3px_12px_rgba(20,40,45,0.05)]">
           <div className="border-b border-[#F1EEE7]">
