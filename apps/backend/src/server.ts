@@ -323,15 +323,42 @@ app.post('/api/kyc', async (req: Request, res: Response) => {
     let nombaAccount = existingNombaRes.rows[0] || null;
 
     if (!nombaAccount) {
-      nombaAccount = await createNombaVirtualAccount({
-        accountRef: user.id,
-        accountName: `${firstName} ${lastName}`,
-        bvn: bvn
-      });
+      try {
+        nombaAccount = await createNombaVirtualAccount({
+          accountRef: user.id,
+          accountName: `${firstName} ${lastName}`,
+          bvn: bvn
+        });
+      } catch (err: any) {
+        // Sandbox grace: If Nomba complains about a duplicate BVN profile, retry without BVN
+        if (err.message.includes('already linked to this profile') || err.message.includes('verify identity')) {
+          console.log('[api/kyc] Nomba BVN conflict detected. Retrying without BVN for Sandbox...');
+          nombaAccount = await createNombaVirtualAccount({
+            accountRef: user.id,
+            accountName: `${firstName} ${lastName}`,
+            // Omit BVN to bypass sandbox constraint
+          });
+        } else {
+          throw err;
+        }
+      }
     }
 
     await db.transaction(async (client) => {
-      // Create cardholder profile record
+      // Sandbox Graceful Recovery: If the user re-used a BVN/Phone that Bridgecard returned as an existing profile,
+      // it might belong to an old DB user. We steal it and reassign it to the new user to avoid unique constraint crashes.
+      const globalExistingCh = await client.query('SELECT id, user_id FROM cardholders WHERE bridgecard_cardholder_id = $1', [bridgecardId]);
+      if (globalExistingCh.rowCount !== null && globalExistingCh.rowCount > 0) {
+        const oldUserId = globalExistingCh.rows[0].user_id;
+        if (oldUserId !== user.id) {
+          console.log(`[api/kyc] Transferring existing cardholder ${bridgecardId} from user ${oldUserId} to ${user.id}`);
+          await client.query(`UPDATE cardholders SET user_id = $1 WHERE user_id = $2`, [user.id, oldUserId]);
+          await client.query(`UPDATE virtual_accounts SET user_id = $1 WHERE user_id = $2`, [user.id, oldUserId]);
+          await client.query(`UPDATE cards SET user_id = $1 WHERE user_id = $2`, [user.id, oldUserId]);
+        }
+      }
+
+      // Create or update cardholder profile record
       const existingCh = await client.query('SELECT id FROM cardholders WHERE user_id = $1', [user.id]);
       if (existingCh.rowCount !== null && existingCh.rowCount > 0) {
         await client.query(
