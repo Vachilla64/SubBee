@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Button from '../../components/ui/Button';
-import { useAuth } from '../../lib/auth';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Button from "../../components/ui/Button";
+import { useAuth } from "../../lib/auth";
 
 export default function Paywall() {
   const navigate = useNavigate();
   const { updateUser } = useAuth();
   const [step, setStep] = useState(1);
-  const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
+  const [selectedPlan, setSelectedPlan] = useState<"annual" | "monthly">(
+    "annual",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [contentVisible, setContentVisible] = useState(false);
 
@@ -28,7 +30,7 @@ export default function Paywall() {
     setTimeout(() => {
       setIsSubmitting(false);
       updateUser({ isPro: true });
-      navigate('/app/welcome-pro');
+      navigate("/app/welcome-pro");
     }, 1500);
   };
 
@@ -156,7 +158,9 @@ export default function Paywall() {
                   className={`relative flex gap-4 transition-all duration-700 delay-[900ms] ${contentVisible && step === 2 ? "translate-x-0 opacity-100" : "-translate-x-6 opacity-0"}`}
                 >
                   <div className="w-5 h-5 shrink-0 mt-0.5 relative z-10 flex items-center justify-center">
-                    <span className="text-[16px] drop-shadow-sm opacity-90">🍯</span>
+                    <span className="text-[16px] drop-shadow-sm opacity-90">
+                      🍯
+                    </span>
                   </div>
                   <div>
                     <div className="text-[16px] font-extrabold text-[#2E393D]">
@@ -172,7 +176,9 @@ export default function Paywall() {
                   className={`relative flex gap-4 transition-all duration-700 delay-[1200ms] ${contentVisible && step === 2 ? "translate-x-0 opacity-100" : "-translate-x-6 opacity-0"}`}
                 >
                   <div className="w-5 h-5 shrink-0 mt-0.5 relative z-10 flex items-center justify-center">
-                    <span className="text-[16px] drop-shadow-sm opacity-90">🌻</span>
+                    <span className="text-[16px] drop-shadow-sm opacity-90">
+                      🌻
+                    </span>
                   </div>
                   <div>
                     <div className="text-[16px] font-extrabold text-[#2E393D]">
@@ -317,14 +323,34 @@ export default function Paywall() {
                 Continue
               </Button>
             ) : (
-              <Button fullWidth onClick={handleSubscribe} disabled={isSubmitting} className="h-14 text-[16px] bg-[#E7B84F] text-[#3A2A0E] shadow-[0_6px_20px_rgba(207,154,68,0.4)] hover:bg-[#F2CE7C]">
-                 {isSubmitting ? 'Activating Pro...' : 'Activate 14-Day Free Trial'}
-                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-               </Button>
+              <Button
+                fullWidth
+                onClick={handleSubscribe}
+                disabled={isSubmitting}
+                className="h-14 text-[16px] bg-[#E7B84F] text-[#3A2A0E] shadow-[0_6px_20px_rgba(207,154,68,0.4)] hover:bg-[#F2CE7C]"
+              >
+                {isSubmitting
+                  ? "Activating Pro..."
+                  : "Activate 14-Day Free Trial"}
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="ml-1"
+                >
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Button>
             )}
 
             <p className="mt-4 text-[12px] font-semibold text-white/95 text-center max-w-[280px] drop-shadow-md leading-relaxed">
-              Plan cost will be automatically deducted from your funded SubBee balance after the trial. No credit card required. Cancel anytime.
+              Plan cost will be automatically deducted from your funded SubBee
+              balance after the trial. No credit card required. Cancel anytime.
             </p>
           </div>
         </div>

@@ -15,10 +15,10 @@ export default function AddSubscription() {
   const [merchant, setMerchant] = useState<Merchant | null>(null);
 
   useEffect(() => {
-    if (subscriptions.length >= 7) {
+    if (!user?.isPro && subscriptions.length >= 7) {
       navigate('/app/upgrade', { replace: true });
     }
-  }, [subscriptions.length, navigate]);
+  }, [subscriptions.length, navigate, user?.isPro]);
 
   // Selection Phase State
   const [search, setSearch] = useState('');

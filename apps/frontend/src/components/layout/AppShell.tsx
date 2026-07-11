@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { DashboardIcon, ActivityIcon, ProfileIcon } from "./NavIcons";
 import { motion } from "framer-motion";
+import { useAuth } from "../../lib/auth";
 
 const TABS = [
   {
@@ -30,6 +31,8 @@ const TABS = [
 
 export default function AppShell() {
   const { pathname } = useLocation();
+  const { user } = useAuth();
+  const isPro = user?.isPro;
 
   return (
     <div className="min-h-screen bg-cream-bg">

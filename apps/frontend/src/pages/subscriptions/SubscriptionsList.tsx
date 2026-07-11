@@ -5,9 +5,11 @@ import SubscriptionRow from '../../components/subscriptions/SubscriptionRow';
 import { SkeletonRows } from '../../components/ui/Skeleton';
 import { useWalletData } from '../../lib/useWalletData';
 import { isInsufficientFunds } from '../../lib/format';
+import { useAuth } from '../../lib/auth';
 
 export default function SubscriptionsList() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { loading, subscriptions, walletKobo } = useWalletData();
 
   return (
@@ -18,7 +20,7 @@ export default function SubscriptionsList() {
         right={
             <button
               onClick={() => {
-                if (subscriptions.length >= 7) {
+                if (!user?.isPro && subscriptions.length >= 7) {
                   navigate('/app/upgrade');
                 } else {
                   navigate('/app/subscriptions/add');
@@ -60,7 +62,7 @@ export default function SubscriptionsList() {
 
               <button
                 onClick={() => {
-                  if (subscriptions.length >= 7) {
+                  if (!user?.isPro && subscriptions.length >= 7) {
                     navigate('/app/upgrade');
                   } else {
                     navigate('/app/subscriptions/add');

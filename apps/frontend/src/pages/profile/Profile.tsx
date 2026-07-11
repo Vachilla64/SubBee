@@ -74,8 +74,15 @@ export default function Profile() {
             />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-xl font-black leading-tight text-white">
-              {user?.name}
+            <div className="flex items-center gap-2">
+              <div className="truncate text-xl font-black leading-tight text-white">
+                {user?.name}
+              </div>
+              {user?.isPro && (
+                <span className="bg-gradient-to-r from-[#E7B84F] to-[#CF9A44] text-[#3A2A0E] text-[10px] font-black uppercase tracking-wider py-0.5 px-1.5 rounded-sm shadow-sm flex items-center">
+                  PRO
+                </span>
+              )}
             </div>
             <div className="truncate text-[13px] font-semibold text-teal-soft3">
               {user?.email}
@@ -156,6 +163,31 @@ export default function Profile() {
             Settings
           </div>
           <div className="overflow-hidden rounded-[18px] bg-white shadow-[0_3px_12px_rgba(20,40,45,0.05)]">
+            {user?.isPro && (
+              <button
+                onClick={() => navigate("/app/profile/subscription")}
+                className="flex w-full items-center gap-3 px-4 py-3.5 text-left border-b border-[#F1EEE7] bg-[#FDF7EC] hover:bg-[#F4F1E5]"
+              >
+                <span className="flex-1 text-[14.5px] font-extrabold text-[#5A4515]">
+                  Manage Pro Subscription
+                </span>
+                <span className="bg-gradient-to-r from-[#E7B84F] to-[#CF9A44] text-[#3A2A0E] text-[9px] font-black uppercase tracking-wider py-0.5 px-1.5 rounded-[4px] shadow-sm mr-1">
+                  PRO
+                </span>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#5A4515"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </button>
+            )}
             {SETTINGS_ROWS.map((row, i) => (
               <button
                 key={row.to}

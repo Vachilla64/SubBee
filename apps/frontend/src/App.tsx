@@ -35,6 +35,7 @@ import Legal from './pages/profile/Legal';
 import OpsDashboard from './pages/profile/OpsDashboard';
 import Paywall from './pages/upgrade/Paywall';
 import WelcomePro from './pages/upgrade/WelcomePro';
+import ProSubscriptionSettings from './pages/profile/ProSubscriptionSettings';
 
 import HiveSplashScreen from './components/layout/HiveSplashScreen';
 import { useState } from 'react';
@@ -97,6 +98,7 @@ export default function App() {
           <Route path="profile/help" element={<HelpSupport />} />
           <Route path="profile/legal" element={<Legal />} />
           <Route path="profile/ops" element={<OpsDashboard />} />
+          <Route path="profile/subscription" element={<ProSubscriptionSettings />} />
         </Route>
         <Route path="/app/upgrade" element={<Paywall />} />
         <Route path="/app/welcome-pro" element={<WelcomePro />} />
