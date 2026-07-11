@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { useAuth } from '../../lib/auth';
 
 export default function TopBar({
   title,
@@ -13,6 +14,8 @@ export default function TopBar({
   right?: ReactNode;
 }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
   return (
     <div className="flex items-center justify-between gap-3 px-5 pb-4 pt-6">
       <div className="flex items-center gap-3">
@@ -28,7 +31,14 @@ export default function TopBar({
           </button>
         )}
         <div>
-          <h1 className="text-xl font-extrabold text-ink">{title}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-extrabold text-ink">{title}</h1>
+            {user?.isPro && (
+              <span className="bg-gradient-to-r from-[#E7B84F] to-[#CF9A44] text-[#3A2A0E] text-[10px] font-black uppercase tracking-wider py-0.5 px-1.5 rounded-sm shadow-sm flex items-center">
+                PRO
+              </span>
+            )}
+          </div>
           {subtitle && <p className="text-xs font-semibold text-ink-muted">{subtitle}</p>}
         </div>
       </div>

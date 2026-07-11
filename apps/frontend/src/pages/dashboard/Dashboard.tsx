@@ -62,7 +62,7 @@ export default function Dashboard() {
   const [settingUp, setSettingUp] = useState(false);
   const [actionSheetSub, setActionSheetSub] = useState<any | null>(null);
 
-  // Subscriptions picked during signup are only ever staged in localStorage —
+  // Subscriptions picked during signup are only ever staged in localStorage -
   // nothing is actually created until the user has a working card. Once that's
   // true, prompt them to finish setup instead of leaving dead "pending" rows
   // that 404 when tapped.
@@ -101,9 +101,9 @@ export default function Dashboard() {
     if (succeeded === total) {
       toast.success(`${succeeded} subscription${succeeded === 1 ? "" : "s"} set up!`);
     } else if (succeeded > 0) {
-      toast.error(`${succeeded} of ${total} set up — add the rest anytime.`);
+      toast.error(`${succeeded} of ${total} set up - add the rest anytime.`);
     } else {
-      toast.error("Couldn't set those up automatically — add them manually anytime.");
+      toast.error("Couldn't set those up automatically - add them manually anytime.");
     }
   };
 
@@ -194,7 +194,7 @@ export default function Dashboard() {
           >
             <span className="text-lg">🐝</span>
             <span className="text-[12.5px] font-bold leading-snug text-gold-text">
-              Verify your identity to unlock a virtual card — your wallet
+              Verify your identity to unlock a virtual card - your wallet
               already works.
             </span>
           </button>
@@ -298,7 +298,7 @@ export default function Dashboard() {
                       </svg>
                     )}
                     {nearestShort > 0n
-                      ? `Short ${formatNaira(nearestShort)} — tap to top up`
+                      ? `Short ${formatNaira(nearestShort)} - tap to top up`
                       : "All upcoming subscriptions fully covered."}
                   </div>
                   <button
@@ -337,8 +337,27 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Upgrade Banner */}
+        <div 
+          onClick={() => navigate('/app/upgrade')}
+          className="mt-4 mx-1 rounded-[20px] bg-gradient-to-r from-[#E7B84F] to-[#DFAE44] p-4 flex items-center justify-between shadow-[0_8px_16px_-6px_rgba(207,154,68,0.4)] cursor-pointer transition-transform active:scale-95"
+        >
+          <div>
+            <div className="text-[14px] font-black text-[#3A2A0E] flex items-center gap-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#3A2A0E"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+              Unlock SubBee Pro
+            </div>
+            <div className="text-[12px] font-semibold text-[#5A4515] mt-0.5">
+              Add unlimited subscriptions & more
+            </div>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3A2A0E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </div>
+
         <div
-          className={`flex items-center justify-between px-1 ${card.status === "inactive" ? "mt-7" : "mt-4.5"}`}
+          className="flex items-center justify-between px-1 mt-5"
         >
           <span className="text-[17px] font-extrabold text-ink">
             My Subscriptions

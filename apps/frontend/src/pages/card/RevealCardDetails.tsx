@@ -97,7 +97,7 @@ export default function RevealCardDetails() {
 
         {phase === 'confirm' && (
           <div className="flex flex-col gap-3 rounded-2xl bg-white p-4.5 text-center shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
-            <p className="text-sm font-bold text-ink">Full number, CVV, and expiry are fetched fresh from Bridgecard every time — never stored on our side.</p>
+            <p className="text-sm font-bold text-ink">Full number, CVV, and expiry are fetched fresh from Bridgecard every time - never stored on our side.</p>
             <Button onClick={reveal}>Reveal card details</Button>
           </div>
         )}
@@ -110,7 +110,7 @@ export default function RevealCardDetails() {
 
         {phase === 'error' && (
           <div className="flex flex-col gap-3 rounded-2xl border border-salmon-alertBorder bg-salmon-alertBg p-4.5 text-center">
-            <p className="text-sm font-bold text-salmon-text">Couldn't fetch details — try again.</p>
+            <p className="text-sm font-bold text-salmon-text">Couldn't fetch details - try again.</p>
             <Button onClick={reveal}>Retry</Button>
           </div>
         )}

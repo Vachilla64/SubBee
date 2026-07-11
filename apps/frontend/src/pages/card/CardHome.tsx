@@ -34,8 +34,8 @@ export default function CardHome() {
             title="No card yet"
             message={
               user?.kycStatus !== 'verified'
-                ? 'Verify your identity first — card issuing is gated on KYC. Your wallet works fine in the meantime.'
-                : 'A card is created automatically the first time a subscription needs one — or get one now.'
+                ? 'Verify your identity first - card issuing is gated on KYC. Your wallet works fine in the meantime.'
+                : 'A card is created automatically the first time a subscription needs one - or get one now.'
             }
             cta={
               user?.kycStatus !== 'verified' ? (
@@ -106,7 +106,7 @@ export default function CardHome() {
               <path d="M12 2v20M4.2 6.5l15.6 11M19.8 6.5L4.2 17.5" />
             </svg>
             <span className="text-[13px] font-bold leading-snug text-[#2A5C8A]">
-              Frozen for your protection. Unfreeze to reactivate — SubBee auto-freezes after repeated declines.
+              Frozen for your protection. Unfreeze to reactivate - SubBee auto-freezes after repeated declines.
             </span>
           </div>
         )}
@@ -134,7 +134,7 @@ export default function CardHome() {
             <div className="tabular-nums text-xl font-black text-ink">{formatNaira(card.balanceKobo ?? 0)}</div>
           </div>
           <span className="max-w-[150px] text-right text-[11px] font-semibold leading-snug text-ink-muted">
-            Low or zero between charges is normal — funded just-in-time.
+            Low or zero between charges is normal - funded just-in-time.
           </span>
         </div>
 

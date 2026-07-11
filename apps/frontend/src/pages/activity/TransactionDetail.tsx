@@ -16,7 +16,7 @@ export default function TransactionDetail() {
         <div className="px-5">
           <EmptyState
             title="Transaction not found"
-            message="This link may be stale — open it again from Activity."
+            message="This link may be stale - open it again from Activity."
             cta={
               <button onClick={() => navigate('/app/activity')} className="text-sm font-extrabold text-teal">
                 Back to Activity

@@ -39,7 +39,7 @@ export default function OpsDashboard() {
 
   return (
     <div>
-      <TopBar title="Developer Tools" subtitle="Ledger invariants & provider liquidity — internal only" back />
+      <TopBar title="Developer Tools" subtitle="Ledger invariants & provider liquidity - internal only" back />
       <div className="flex flex-col gap-3.5 px-5 pb-6">
         {loading ? (
           <Skeleton className="h-64 w-full rounded-2xl" />

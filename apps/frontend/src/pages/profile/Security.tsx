@@ -17,7 +17,7 @@ export default function Security() {
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
           <span className="text-xs font-bold leading-relaxed text-[#5A4C72]">
-            Preview only — most of these controls aren't wired to the server yet.
+            Preview only - most of these controls aren't wired to the server yet.
           </span>
         </div>
 

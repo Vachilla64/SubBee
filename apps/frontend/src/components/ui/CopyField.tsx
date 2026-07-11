@@ -9,7 +9,7 @@ export default function CopyField({ label, value }: { label: string; value: stri
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // clipboard API unavailable — nothing actionable to do
+      // clipboard API unavailable - nothing actionable to do
     }
   };
 

@@ -6,6 +6,7 @@ export interface AuthUser {
   name: string;
   email: string;
   kycStatus?: string;
+  isPro?: boolean;
 }
 
 interface AuthContextValue {

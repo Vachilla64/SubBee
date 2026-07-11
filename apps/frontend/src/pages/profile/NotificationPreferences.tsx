@@ -18,7 +18,7 @@ export default function NotificationPreferences() {
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
           <span className="text-xs font-bold leading-relaxed text-[#5A4C72]">
-            Preview only — these controls aren't wired to the server yet. Your live alerts still arrive on Telegram.
+            Preview only - these controls aren't wired to the server yet. Your live alerts still arrive on Telegram.
           </span>
         </div>
 

@@ -18,7 +18,7 @@ export default function CardCreating() {
           return;
         }
       } catch {
-        // keep polling — a transient failure shouldn't strand the user here
+        // keep polling - a transient failure shouldn't strand the user here
       }
       if (!cancelled) setTimeout(poll, 1200);
     };

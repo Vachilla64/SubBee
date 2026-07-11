@@ -121,7 +121,7 @@ export default function NotificationCenter() {
           </div>
         </div>
 
-        {/* read: KYC verified (last — no connector) */}
+        {/* read: KYC verified (last - no connector) */}
         <div className="flex items-stretch gap-3.5">
           <div className="relative flex w-[42px] shrink-0 flex-col items-center">
             {/* no dashed border line extending past the last item */}

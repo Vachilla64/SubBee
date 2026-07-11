@@ -68,7 +68,7 @@ export default function WalletReady() {
             <path d="M20 6L9 17l-5-5" />
           </svg>
           <span className="text-[12.5px] font-bold leading-relaxed text-active-text">
-            Transfer money to this account and it lands in your SubBee wallet within seconds — no card needed.
+            Transfer money to this account and it lands in your SubBee wallet within seconds - no card needed.
           </span>
         </div>
 

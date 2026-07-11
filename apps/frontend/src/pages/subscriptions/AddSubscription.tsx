@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../components/layout/TopBar';
 import TextField from '../../components/ui/TextField';
@@ -6,11 +6,19 @@ import Button from '../../components/ui/Button';
 import { MERCHANTS, type Merchant } from '../../lib/merchants';
 import { useAuth } from '../../lib/auth';
 import { api } from '../../lib/api';
+import { useWalletData } from '../../lib/useWalletData';
 
 export default function AddSubscription() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { subscriptions } = useWalletData();
   const [merchant, setMerchant] = useState<Merchant | null>(null);
+
+  useEffect(() => {
+    if (subscriptions.length >= 7) {
+      navigate('/app/upgrade', { replace: true });
+    }
+  }, [subscriptions.length, navigate]);
 
   // Selection Phase State
   const [search, setSearch] = useState('');
@@ -22,6 +30,9 @@ export default function AddSubscription() {
   const [reminders, setReminders] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Custom Subscription State
+  const [customName, setCustomName] = useState('');
 
   // Group existing merchants into categories
   const categories = useMemo(() => {
@@ -34,25 +45,36 @@ export default function AddSubscription() {
     return [
       {
         label: 'POPULAR',
-        items: MERCHANTS.filter(m => ['netflix', 'spotify', 'amazon_prime', 'youtube', 'dstv'].includes(m.id))
+        items: MERCHANTS.filter(m => ['netflix', 'spotify', 'amazon_prime'].includes(m.id))
       },
       {
         label: 'MUSIC',
-        items: MERCHANTS.filter(m => ['spotify', 'apple', 'youtube'].includes(m.id))
+        items: MERCHANTS.filter(m => ['apple'].includes(m.id))
       },
       {
         label: 'VIDEO',
-        items: MERCHANTS.filter(m => ['netflix', 'amazon_prime', 'youtube', 'dstv'].includes(m.id))
+        items: MERCHANTS.filter(m => ['youtube', 'dstv'].includes(m.id))
       },
       {
         label: 'PRODUCTIVITY',
         items: MERCHANTS.filter(m => ['github', 'openai', 'zoom', 'linkedin'].includes(m.id))
+      },
+      {
+        label: 'OTHER',
+        items: [{
+          id: 'custom',
+          name: 'Custom Service',
+          defaultPriceNaira: 0,
+          color: '#E7B84F',
+          logoText: 'C'
+        }]
       }
     ];
   }, [search]);
 
   // Shorten names to match the clean look of the image
   const formatName = (name: string) => {
+    if (name === 'Custom Service') return 'Custom';
     return name
       .replace(' Video', '')
       .replace(' / iCloud', '')
@@ -63,26 +85,30 @@ export default function AddSubscription() {
   const proceedToSetup = () => {
     if (tempSelection) {
       setMerchant(tempSelection);
-      setAmount(String(tempSelection.defaultPriceNaira));
+      setAmount(tempSelection.id === 'custom' ? '' : String(tempSelection.defaultPriceNaira));
     }
   };
 
   const submit = async () => {
     if (!user || !merchant) return;
+    if (merchant.id === 'custom' && !customName.trim()) {
+      setError('Please enter a name for your custom subscription.');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
       const data = await api.addSubscription({
         email: user.email,
         merchantId: merchant.id,
-        merchantName: merchant.name,
+        merchantName: merchant.id === 'custom' ? customName.trim() : merchant.name,
         amountNaira: Number(amount),
         billingDay: Number(billingDay),
         remindersEnabled: reminders,
       });
       navigate(`/app/subscriptions/${data.id}`, { replace: true });
     } catch {
-      setError('Could not add this subscription — try again.');
+      setError('Could not add this subscription. Please try again.');
       setSubmitting(false);
     }
   };
@@ -120,7 +146,7 @@ export default function AddSubscription() {
                      return (
                        <button
                          key={m.id + cat.label}
-                         onClick={() => setTempSelection(m)}
+                         onClick={() => setTempSelection(m as Merchant)}
                          className="flex-shrink-0 flex flex-col items-center gap-2 w-[76px] group outline-none"
                        >
                          <div className={`relative w-[72px] h-[72px] rounded-[22px] overflow-hidden flex items-center justify-center transition-all duration-200 ${
@@ -128,11 +154,15 @@ export default function AddSubscription() {
                              ? "ring-[2px] ring-ink bg-[#EFE3C7] shadow-sm scale-[1.02]"
                              : "ring-[1px] ring-black/5 bg-white shadow-sm group-hover:ring-ink/20"
                          }`}>
-                           <img
-                             src={`/icons/${m.id}.png`}
-                             alt={m.name}
-                             className="w-[50px] h-[50px] object-contain drop-shadow-sm"
-                           />
+                           {m.id === 'custom' ? (
+                             <span className="text-3xl text-ink">➕</span>
+                           ) : (
+                             <img
+                               src={`/icons/${m.id}.png`}
+                               alt={m.name}
+                               className="w-[50px] h-[50px] object-contain drop-shadow-sm"
+                             />
+                           )}
                          </div>
                          <span className={`text-[12.5px] font-bold leading-tight text-center w-full truncate ${selected ? "text-ink" : "text-ink-muted"}`}>
                            {formatName(m.name)}
@@ -170,12 +200,18 @@ export default function AddSubscription() {
 
           <div className="rounded-[24px] bg-white p-5 shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
             <div className="flex items-center gap-3">
-              <img
-                src={`/icons/${merchant.id}.png`}
-                alt=""
-                onError={(e) => ((e.currentTarget as HTMLElement).style.visibility = 'hidden')}
-                className="h-[46px] w-[46px] shrink-0 rounded-2xl bg-ink/5 object-contain p-1.5"
-              />
+              {merchant.id === 'custom' ? (
+                <div className="h-[46px] w-[46px] shrink-0 rounded-2xl bg-[#E7B84F]/20 flex items-center justify-center p-1.5">
+                  <span className="text-xl">➕</span>
+                </div>
+              ) : (
+                <img
+                  src={`/icons/${merchant.id}.png`}
+                  alt=""
+                  onError={(e) => ((e.currentTarget as HTMLElement).style.visibility = 'hidden')}
+                  className="h-[46px] w-[46px] shrink-0 rounded-2xl bg-ink/5 object-contain p-1.5"
+                />
+              )}
               <div>
                 <div className="text-[17px] font-black text-ink">{merchant.name}</div>
                 <div className="text-[12.5px] font-bold text-ink-muted">Set up your billing</div>
@@ -183,6 +219,16 @@ export default function AddSubscription() {
             </div>
 
             <div className="mt-4 flex flex-col gap-3.5">
+              {merchant.id === 'custom' && (
+                <TextField
+                  label="Subscription name"
+                  type="text"
+                  required
+                  placeholder="e.g. Gym Membership"
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                />
+              )}
               <TextField
                 label="Billing amount (₦)"
                 type="number"
@@ -219,8 +265,8 @@ export default function AddSubscription() {
 
               {error && <p className="text-sm font-semibold text-salmon-text">{error}</p>}
 
-              <Button fullWidth disabled={submitting || !amount} onClick={submit} className="mt-1 !h-14 !text-[16px]">
-                {submitting ? 'Adding…' : `Add ${merchant.name}`}
+              <Button fullWidth disabled={submitting || !amount || (merchant.id === 'custom' && !customName)} onClick={submit} className="mt-1 !h-14 !text-[16px]">
+                {submitting ? 'Adding…' : `Add ${merchant.id === 'custom' ? (customName || 'Subscription') : merchant.name}`}
               </Button>
             </div>
           </div>

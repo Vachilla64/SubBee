@@ -168,7 +168,7 @@ export default function SignUp() {
         navigate(user.kycStatus === "verified" ? "/app/dashboard" : "/kyc");
       });
     } catch {
-      setError("Something went wrong — check your details and try again.");
+      setError("Something went wrong - check your details and try again.");
       setSubmitting(false);
     }
   };

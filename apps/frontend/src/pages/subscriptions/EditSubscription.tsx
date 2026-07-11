@@ -58,7 +58,7 @@ export default function EditSubscription() {
       await refetch();
       navigate(`/app/subscriptions/${sub.id}`, { replace: true });
     } catch {
-      setError('Could not save changes — try again.');
+      setError('Could not save changes - try again.');
       setSubmitting(false);
     }
   };

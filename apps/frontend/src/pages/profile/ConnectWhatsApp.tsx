@@ -16,7 +16,7 @@ export default function ConnectWhatsApp() {
           </div>
           <p className="mt-3.5 text-xl font-black text-ink">Manage SubBee on WhatsApp</p>
           <p className="mt-1.5 max-w-[280px] text-sm font-semibold leading-relaxed text-ink-muted">
-            Get reminders and act on them right where you already chat — no need to open the app.
+            Get reminders and act on them right where you already chat - no need to open the app.
           </p>
         </div>
 

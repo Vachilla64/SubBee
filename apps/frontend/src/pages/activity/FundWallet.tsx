@@ -145,7 +145,7 @@ export default function FundWallet() {
 
         <div className="mt-5 rounded-2xl border border-dashed border-ink/15 p-3.5">
           <p className="mb-2 text-xs font-extrabold text-ink-faint">
-            DEV SHORTCUT — no bank webhook in this environment
+            DEV SHORTCUT - no bank webhook in this environment
           </p>
           <div className="flex gap-2">
             <Button

@@ -4,7 +4,7 @@ export interface SubscriptionLike {
   isActive: boolean;
 }
 
-/** Money always renders through here — never hand-format kobo inline. */
+/** Money always renders through here - never hand-format kobo inline. */
 export function formatNaira(kobo: bigint | number): string {
   const num = typeof kobo === 'bigint' ? Number(kobo) : kobo;
   return '₦' + (num / 100).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -29,7 +29,7 @@ export function formatShortDate(date: Date): string {
 }
 
 /**
- * There's no `subscriptions.status` column in the backend — only `is_active`. Insufficient-funds
+ * There's no `subscriptions.status` column in the backend - only `is_active`. Insufficient-funds
  * is derived here (not fabricated): a sub is short if the wallet can't currently cover its own
  * bill amount. Checked per-row rather than cumulatively across all active subs, since the backend
  * has no reservation/allocation order to reason about.
@@ -61,7 +61,7 @@ export function transactionLabel(sourceType: string): string {
 }
 
 /**
- * `card_funding` is the wallet-to-card money movement that happens ahead of a charge — the spec
+ * `card_funding` is the wallet-to-card money movement that happens ahead of a charge - the spec
  * (AGENTS.md's Activity data-decision rule) is explicit that this internal step must never show as
  * a user-facing line item, only the deposit that funded it and the eventual subscription charge.
  */

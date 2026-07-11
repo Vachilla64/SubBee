@@ -23,7 +23,7 @@ export default function SubscriptionRow({
    *  drop its own card chrome so we don't stack a white rounded shadow inside another. */
   embedded?: boolean;
   awaitingCard?: boolean;
-  /** Overrides the default navigate-to-detail-page behavior — used for rows that don't have a real ID yet. */
+  /** Overrides the default navigate-to-detail-page behavior - used for rows that don't have a real ID yet. */
   onClick?: () => void;
 }) {
   const navigate = useNavigate();

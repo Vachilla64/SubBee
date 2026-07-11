@@ -132,7 +132,7 @@ export default function Kyc() {
     }
 
     if (next !== cardFirstPin) {
-      setPinError("PINs didn't match — try again.");
+      setPinError("PINs didn't match - try again.");
       setTimeout(() => {
         setCardFirstPin(null);
         setCardPin("");
@@ -299,12 +299,12 @@ export default function Kyc() {
                 </div>
                 <div className="text-[26px] font-black text-ink tracking-tight mt-3">
                   {errorStage === "card"
-                    ? "We verified you — card setup failed"
+                    ? "We verified you - card setup failed"
                     : "We couldn't verify you"}
                 </div>
                 <div className="text-[14.5px] font-semibold text-ink-muted leading-relaxed max-w-[290px] mt-1.5">
                   {errorStage === "card"
-                    ? "Your identity is verified. We just couldn't create your card — let's try again."
+                    ? "Your identity is verified. We just couldn't create your card - let's try again."
                     : error && error.toLowerCase().includes("phone")
                       ? "There's an issue with your phone number."
                       : error && error.toLowerCase().includes("name")
@@ -351,7 +351,7 @@ export default function Kyc() {
                             Check your BVN
                           </div>
                           <div className="text-[12.5px] font-semibold text-ink-muted leading-[1.4]">
-                            Re-enter it carefully — one wrong digit will fail
+                            Re-enter it carefully - one wrong digit will fail
                             the match.
                           </div>
                         </div>
@@ -477,7 +477,7 @@ export default function Kyc() {
                 <button
                   onClick={() => {
                     if (errorStage === "card") {
-                      // Card issuance failed after KYC succeeded — retry from the PIN step
+                      // Card issuance failed after KYC succeeded - retry from the PIN step
                       setCeremonyPhase("none");
                       return;
                     }
@@ -667,7 +667,7 @@ export default function Kyc() {
                 </div>
                 <div className="text-[14.5px] font-semibold text-[#8A9499] leading-relaxed max-w-[290px] mt-1.5">
                   Verification usually takes a few minutes. You can close the
-                  app — we'll notify you the moment it's done.
+                  app - we'll notify you the moment it's done.
                 </div>
               </div>
 

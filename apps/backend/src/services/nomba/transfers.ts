@@ -9,7 +9,7 @@ export interface BankOption {
 interface NombaBanksResponse {
   code: string;
   description: string;
-  data: { results: BankOption[] };
+  data: BankOption[];
 }
 
 // Bank codes rarely change — cache in-process rather than round-tripping Nomba on every load.
@@ -35,7 +35,7 @@ export async function listBanks(): Promise<BankOption[]> {
     throw new Error(result.description || `API error code ${result.code}`);
   }
 
-  cachedBanks = result.data.results;
+  cachedBanks = result.data;
   return cachedBanks;
 }
 
@@ -126,6 +126,7 @@ export async function sendBankTransfer(params: SendTransferParams): Promise<Tran
       bankCode: params.bankCode,
       merchantTxRef: params.merchantTxRef,
       narration: params.narration ?? 'SubBee wallet withdrawal',
+      senderName: 'SubBee',
     }),
   });
 

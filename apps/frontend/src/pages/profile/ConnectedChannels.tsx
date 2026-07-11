@@ -53,7 +53,7 @@ export default function ConnectedChannels() {
             </a>
           )}
           <p className="mt-2 text-center text-xs font-semibold text-ink-faint">
-            Opens the SubBee bot with your code pre-applied — nothing to type.
+            Opens the SubBee bot with your code pre-applied - nothing to type.
           </p>
         </section>
 
@@ -71,7 +71,7 @@ export default function ConnectedChannels() {
 
           <div className="flex items-center justify-between rounded-2xl bg-white px-4 py-3.5 shadow-[0_3px_12px_rgba(20,40,45,0.05)]">
             <span className="text-sm font-extrabold text-ink">WhatsApp</span>
-            {/* WhatsApp backend integration is coming — preview only */}
+            {/* WhatsApp backend integration is coming - preview only */}
             <span className="rounded-full px-3 py-1.5 text-[11.5px] font-extrabold bg-[#F1EEE7] text-[#8A7A55]">
               Coming soon
             </span>
@@ -85,7 +85,7 @@ export default function ConnectedChannels() {
             Connect WhatsApp
           </button>
           <p className="mt-2 text-center text-xs font-semibold text-ink-faint">
-            WhatsApp alerts are on our roadmap — stay tuned.
+            WhatsApp alerts are on our roadmap - stay tuned.
           </p>
         </section>
 

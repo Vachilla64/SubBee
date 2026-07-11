@@ -26,7 +26,7 @@ export default function ActionRequiredCard({
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // clipboard unavailable — nothing actionable
+      // clipboard unavailable - nothing actionable
     }
   };
 

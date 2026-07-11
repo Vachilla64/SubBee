@@ -35,7 +35,7 @@ export default function SetCardPin() {
     }
 
     if (next !== firstPin) {
-      setError("PINs didn't match — try again.");
+      setError("PINs didn't match - try again.");
       setTimeout(() => {
         setFirstPin(null);
         setPin('');
@@ -50,7 +50,7 @@ export default function SetCardPin() {
       await api.requestCard(user.email, next);
       navigate('/app/card/creating');
     } catch {
-      setError('Could not create your card — try again.');
+      setError('Could not create your card - try again.');
       setFirstPin(null);
       setPin('');
       setSubmitting(false);

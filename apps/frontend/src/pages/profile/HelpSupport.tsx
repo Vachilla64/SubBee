@@ -7,7 +7,7 @@ const FAQS = [
   },
   {
     q: 'What does "Insufficient Funds" mean?',
-    a: "Your wallet doesn't yet cover an upcoming bill. Top up the exact shortfall shown and the payment resumes automatically — no manual retry needed.",
+    a: "Your wallet doesn't yet cover an upcoming bill. Top up the exact shortfall shown and the payment resumes automatically - no manual retry needed.",
   },
   {
     q: 'Why did my subscription pause itself?',
