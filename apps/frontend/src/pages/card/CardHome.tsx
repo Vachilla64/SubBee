@@ -64,7 +64,7 @@ export default function CardHome() {
                   •••• •••• •••• ••••
                 </div>
                 <div className="flex justify-between items-end text-white text-[11px] font-bold tracking-widest uppercase">
-                  <span>{user?.firstName ? `${user.firstName} ${user.lastName}` : "CARDHOLDER"}</span>
+                  <span>{user?.name || "CARDHOLDER"}</span>
                   <span>••/••</span>
                 </div>
               </div>

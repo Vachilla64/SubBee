@@ -7,7 +7,6 @@ import TextField from "../../components/ui/TextField";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../lib/auth";
 import { useTransition } from "../../lib/TransitionContext";
-import { formatNaira } from "../../lib/format";
 
 type SubscriptionOption = {
   id: string;
@@ -148,13 +147,6 @@ export default function SignUp() {
     else next.add(id);
     setSelectedSubs(next);
   };
-
-  const totalSpend = useMemo(() => {
-    return Array.from(selectedSubs).reduce((acc, id) => {
-      const sub = SUBSCRIPTION_OPTIONS.find((s) => s.id === id);
-      return acc + (sub?.price || 0);
-    }, 0);
-  }, [selectedSubs]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
