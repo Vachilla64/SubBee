@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import TextField from "../../components/ui/TextField";
+import PhoneField from "../../components/ui/PhoneField";
 import SelectField from "../../components/ui/SelectField";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../lib/auth";
@@ -1085,22 +1086,12 @@ export default function Kyc() {
                   Where should we register it?
                 </h2>
                 <div className="mt-4 flex flex-col gap-4 overflow-y-auto pb-4">
-                  <TextField
+                  <PhoneField
                     label="Phone number"
-                    type="tel"
-                    placeholder="+234..."
-                    pattern="\+?[0-9\s\-\(\)]+"
-                    tooltip="Enter your 11-digit Nigerian phone number (e.g. 0810... or +234...)"
+                    tooltip="Enter your Nigerian phone number. It will be securely linked to your virtual card."
                     required
                     value={form.phone}
-                    onChange={(e) => {
-                      let val = e.target.value.replace(/[^\d+]/g, "");
-                      if (val.startsWith("0")) val = "+234" + val.slice(1);
-                      else if (val.startsWith("234")) val = "+" + val;
-                      else if (/^[789]/.test(val)) val = "+234" + val;
-                      else if (val.length > 0 && !val.startsWith("+")) val = "+" + val;
-                      set("phone", val);
-                    }}
+                    onChange={(val) => set("phone", val)}
                   />
                   <TextField
                     label="Street address"
