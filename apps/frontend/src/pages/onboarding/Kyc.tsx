@@ -1037,12 +1037,16 @@ export default function Kyc() {
                   <TextField
                     label="First name"
                     required
+                    pattern="[a-zA-Z\s\-]+"
+                    tooltip="Only letters, spaces, and hyphens allowed. Must exactly match your ID."
                     value={form.firstName}
                     onChange={(e) => set("firstName", e.target.value)}
                   />
                   <TextField
                     label="Last name"
                     required
+                    pattern="[a-zA-Z\s\-]+"
+                    tooltip="Only letters, spaces, and hyphens allowed. Must exactly match your ID."
                     value={form.lastName}
                     onChange={(e) => set("lastName", e.target.value)}
                   />
@@ -1085,12 +1089,15 @@ export default function Kyc() {
                     label="Phone number"
                     type="tel"
                     placeholder="+234..."
+                    pattern="\+?[0-9\s\-\(\)]+"
+                    tooltip="Enter your 11-digit Nigerian phone number (e.g. 0810... or +234...)"
                     required
                     value={form.phone}
                     onChange={(e) => {
                       let val = e.target.value.replace(/[^\d+]/g, "");
                       if (val.startsWith("0")) val = "+234" + val.slice(1);
                       else if (val.startsWith("234")) val = "+" + val;
+                      else if (/^[789]/.test(val)) val = "+234" + val;
                       else if (val.length > 0 && !val.startsWith("+")) val = "+" + val;
                       set("phone", val);
                     }}
@@ -1098,6 +1105,8 @@ export default function Kyc() {
                   <TextField
                     label="Street address"
                     required
+                    minLength={5}
+                    tooltip="Enter your full residential street address (e.g. 12 Admiralty Way)."
                     value={form.address}
                     onChange={(e) => set("address", e.target.value)}
                   />
@@ -1131,6 +1140,9 @@ export default function Kyc() {
                   <TextField
                     label="Postal code"
                     inputMode="numeric"
+                    pattern="\d{6}"
+                    maxLength={6}
+                    tooltip="Your 6-digit Nigerian postal code (e.g. 100001)."
                     required
                     value={form.postalCode}
                     onChange={(e) => set("postalCode", e.target.value.replace(/\D/g, ""))}
@@ -1182,7 +1194,10 @@ export default function Kyc() {
                     label="Bank Verification Number"
                     placeholder="11-digit BVN"
                     inputMode="numeric"
+                    pattern="\d{11}"
+                    minLength={11}
                     maxLength={11}
+                    tooltip="Your 11-digit BVN is required by CBN regulations. It is encrypted and never stored."
                     required
                     value={form.bvn}
                     onChange={(e) =>
