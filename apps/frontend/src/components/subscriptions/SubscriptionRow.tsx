@@ -63,33 +63,46 @@ export default function SubscriptionRow({
 
   let statusText = '';
   let statusColor = 'text-ink-muted';
+  let statusIcon: React.ReactNode = null;
 
   switch (status) {
     case 'awaiting_card':
       statusText = 'Awaiting virtual card creation...';
+      statusIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>;
       statusColor = 'text-gold-dark';
       break;
     case 'insufficient':
-      statusText = '⚠️ Insufficient funds for upcoming charge';
+      statusText = 'Insufficient funds for upcoming charge';
+      statusIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
       statusColor = 'text-salmon-text';
       break;
     case 'awaiting_charge':
       statusText = 'Auto-detecting on next charge...';
+      statusIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>;
       statusColor = 'text-gold-dark';
       break;
     case 'needs_review':
       statusText = 'Action required: Review setup';
+      statusIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
       statusColor = 'text-salmon-text';
       break;
     case 'active':
       {
         const days = getDaysUntil(sub.billingDay);
-        statusText = days === 0 ? 'Charging today' : `Next charge in ${days} days`;
-        statusColor = 'text-ink-muted';
+        if (days === 0) {
+          statusText = 'Charging today';
+          statusIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>;
+          statusColor = 'text-gold-dark';
+        } else {
+          statusText = `Next charge in ${days} days`;
+          statusIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+          statusColor = 'text-ink-muted';
+        }
       }
       break;
     case 'paused':
       statusText = 'Subscription is paused';
+      statusIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>;
       statusColor = 'text-ink-muted/70';
       break;
   }
@@ -138,7 +151,8 @@ export default function SubscriptionRow({
       
       <div className="my-3 h-[1px] w-full bg-[#F2ECE0]" />
       
-      <div className={`text-[12.5px] font-bold ${statusColor}`}>
+      <div className={`text-[12.5px] font-bold flex items-center gap-1.5 ${statusColor}`}>
+        {statusIcon}
         {statusText}
       </div>
     </button>

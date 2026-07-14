@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/auth';
 import { api } from '../../lib/api';
 import { formatNaira, isUserFacingTransaction, transactionLabel } from '../../lib/format';
-import Button from '../../components/ui/Button';
 import { SkeletonRows } from '../../components/ui/Skeleton';
 
 export interface Transaction {
@@ -68,24 +67,10 @@ export default function TransactionHistory() {
             <div className="text-[14px] font-semibold text-ink-muted leading-relaxed max-w-[250px] mt-1.5">
               Payments, top-ups and refunds will show up here as soon as they happen.
             </div>
-            <button 
-              onClick={() => navigate('/app/activity/fund')} 
-              className="mt-4.5 h-[50px] px-[26px] rounded-full text-[#3A2A0E] font-black text-[15px] shadow-[0_12px_22px_-10px_rgba(207,154,68,0.9)] transition-transform active:scale-95"
-              style={{ background: 'linear-gradient(165deg, #F2CE7C, #E7B84F 60%, #DFAE44)' }}
-            >
-              Add money to start
-            </button>
           </div>
         ) : (
           <>
-            <div className="mb-4 flex gap-2.5">
-              <Button fullWidth onClick={() => navigate('/app/activity/fund')}>
-                + Add Money
-              </Button>
-              <Button variant="secondary" fullWidth onClick={() => navigate('/app/activity/withdraw')}>
-                Withdraw
-              </Button>
-            </div>
+
             {Object.entries(groups).map(([label, rows]) => (
               <div key={label} className="mb-4">
                 <div className="pb-2 pl-1 text-[13px] font-black tracking-wide text-[#8A7A55]">{label}</div>

@@ -1,24 +1,27 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { DashboardIcon, ActivityIcon, ProfileIcon } from "./NavIcons";
+import { DashboardIcon, ProfileIcon } from "./NavIcons";
 import { motion } from "framer-motion";
+
+import { SubscriptionIcon, CardIcon } from "./NavIcons";
 
 const TABS = [
   {
     to: "/app/dashboard",
-    match: [
-      "/app/dashboard",
-      "/app/notifications",
-      "/app/subscriptions",
-      "/app/card",
-    ],
-    label: "Dashboard",
+    match: ["/app/dashboard", "/app/notifications"],
+    label: "Home",
     Icon: DashboardIcon,
   },
   {
-    to: "/app/activity",
-    match: ["/app/activity"],
-    label: "Activity",
-    Icon: ActivityIcon,
+    to: "/app/subscriptions",
+    match: ["/app/subscriptions"],
+    label: "Subs",
+    Icon: SubscriptionIcon,
+  },
+  {
+    to: "/app/card",
+    match: ["/app/card"],
+    label: "Card",
+    Icon: CardIcon,
   },
   {
     to: "/app/profile",
