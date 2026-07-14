@@ -1037,6 +1037,7 @@ export default function Kyc() {
                 <div className="flex flex-col gap-4">
                   <TextField
                     label="First name"
+                    placeholder="e.g. Adebayo"
                     required
                     pattern="[a-zA-Z\s\-]+"
                     tooltip="Only letters, spaces, and hyphens allowed. Must exactly match your ID."
@@ -1045,6 +1046,7 @@ export default function Kyc() {
                   />
                   <TextField
                     label="Last name"
+                    placeholder="e.g. Ogunlesi"
                     required
                     pattern="[a-zA-Z\s\-]+"
                     tooltip="Only letters, spaces, and hyphens allowed. Must exactly match your ID."
@@ -1095,6 +1097,7 @@ export default function Kyc() {
                   />
                   <TextField
                     label="Street address"
+                    placeholder="e.g. 12 Admiralty Way, Lekki"
                     required
                     minLength={5}
                     tooltip="Enter your full residential street address (e.g. 12 Admiralty Way)."
@@ -1130,6 +1133,7 @@ export default function Kyc() {
                   </div>
                   <TextField
                     label="Postal code"
+                    placeholder="e.g. 101233"
                     inputMode="numeric"
                     pattern="\d{6}"
                     maxLength={6}
@@ -1183,7 +1187,7 @@ export default function Kyc() {
                 <div className="flex flex-col gap-4">
                   <TextField
                     label="Bank Verification Number"
-                    placeholder="11-digit BVN"
+                    placeholder="e.g. 22233344455"
                     inputMode="numeric"
                     pattern="\d{11}"
                     minLength={11}
