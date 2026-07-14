@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { formatNaira } from "../../lib/format";
+import Modal from "../ui/Modal";
 
 type CardStatus = "inactive" | "active" | "frozen" | "creating";
 
@@ -15,6 +17,7 @@ export default function VirtualCardBlock({
   overlap?: boolean;
 }) {
   const navigate = useNavigate();
+  const [showAutoFundModal, setShowAutoFundModal] = useState(false);
 
   if (status === "inactive") {
     return (
@@ -58,17 +61,20 @@ export default function VirtualCardBlock({
       className={`teal-card-gradient relative block w-full rounded-[22px] transition-transform active:scale-95 ${overlap ? "-mt-10" : ""}`}
     >
       <img
-        src="/illustrations/subbee-logo.png"
+        src="/illustrations/bee-peek.png"
         alt=""
-        className="pointer-events-none absolute z-10 -top-[10px] right-[-20px] h-[110px] w-[120px] object-contain opacity-[0.15] mix-blend-overlay"
+        className="pointer-events-none absolute z-10 bottom-0 right-[-10px] h-[90px] w-[90px] object-contain opacity-[0.1]"
       />
       <div
         className={`relative block w-full overflow-hidden rounded-[22px] px-5 py-5 text-left text-[#E6EFEE] shadow-[0_18px_34px_-16px_rgba(10,30,30,0.85)]`}
       >
-        <div className="relative flex items-center justify-between mb-4">
-          <span className="flex items-center gap-2 text-[12px] font-extrabold tracking-widest text-white/70">
-            SUBBEE VIRTUAL
-          </span>
+        <div className="relative flex items-center justify-between mb-4 z-20">
+          <div className="flex items-center gap-2">
+            <img src="/illustrations/subbee-logo.png" alt="SubBee" className="h-[26px] w-auto object-contain drop-shadow-md" />
+            <span className="text-[12px] font-extrabold tracking-widest text-white/70">
+              VIRTUAL
+            </span>
+          </div>
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold tracking-wider ${statusChip.className}`}
           >
@@ -82,10 +88,13 @@ export default function VirtualCardBlock({
             <span className="tabular-nums text-[32px] font-black leading-none text-white drop-shadow-md">
               {formatNaira(balanceKobo ?? 0)}
             </span>
-            <div className="flex items-center gap-1.5 rounded-lg bg-black/20 px-2 py-1.5 border border-white/10 shadow-inner">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setShowAutoFundModal(true); }}
+              className="flex items-center gap-1.5 rounded-lg bg-black/20 hover:bg-black/30 transition-colors px-2 py-1.5 border border-white/10 shadow-inner"
+            >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9FC4C3" strokeWidth="2.5"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
               <span className="text-[9px] font-extrabold text-teal-softText uppercase tracking-widest">Auto-funds</span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -105,6 +114,20 @@ export default function VirtualCardBlock({
           </div>
         </div>
       </div>
+      
+      <Modal
+        open={showAutoFundModal}
+        onClose={() => setShowAutoFundModal(false)}
+        title="What is Auto-funding?"
+        message="Your SubBee virtual card balance is intentionally kept at ₦0.00 until a subscription is due. The moment a merchant tries to charge the card, we instantly move the exact amount from your main wallet to this card to cover the bill. This guarantees your funds are completely protected from unexpected or unauthorized charges."
+        actions={[
+          {
+            label: "Got it!",
+            onClick: () => setShowAutoFundModal(false),
+            variant: "primary",
+          },
+        ]}
+      />
     </button>
   );
 }
