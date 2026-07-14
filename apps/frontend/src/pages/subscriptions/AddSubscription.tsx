@@ -146,7 +146,7 @@ export default function AddSubscription() {
                 placeholder="Search for popular services..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-[14px] bg-white border border-[#EAE7DF] py-[14px] pl-4 pr-10 text-[15px] font-semibold text-ink placeholder:text-ink-muted/70 focus:outline-none focus:border-teal shadow-[0_2px_8px_rgba(20,40,45,0.04)]"
+                className="w-full rounded-[14px] bg-white border border-[#EAE7DF] py-[14px] pl-4 pr-10 text-[15px] font-semibold text-ink placeholder:text-ink-muted/70 focus:outline-none focus:border-gold shadow-[0_2px_8px_rgba(20,40,45,0.04)]"
               />
               <svg
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-muted/60"
@@ -292,23 +292,26 @@ export default function AddSubscription() {
               )}
 
               {/* Auto-Detect Card */}
-              <div className="rounded-[24px] border-2 border-[#1C4042] p-5 bg-[#F4F9F9] shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-[16px] font-black text-[#1C4042]">Auto-Detect (Recommended)</h3>
-                  <span className="text-xl leading-none">✨</span>
+              <div className="rounded-[24px] border-[1.5px] border-gold bg-white p-5 shadow-[0_6px_20px_-4px_rgba(207,154,68,0.25)] relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#E7C97E]/10 to-transparent"></div>
+                <div className="relative z-10 flex flex-col">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-[16px] font-black text-ink">Auto-Detect (Recommended)</h3>
+                    <span className="text-xl leading-none drop-shadow-sm">✨</span>
+                  </div>
+                  <p className="text-[13.5px] font-medium text-ink-muted leading-relaxed mb-5">
+                    Skip the form! We'll automatically lock in the exact amount and billing cycle when this service charges your card for the first time.
+                  </p>
+                  <Button
+                    type="button"
+                    fullWidth
+                    disabled={submitting || (merchant.id === "custom" && !customName)}
+                    onClick={() => submit(true)}
+                    className="!h-12 !text-[15px] !bg-ink"
+                  >
+                    {submitting ? "Adding…" : "Enable Auto-Detect"}
+                  </Button>
                 </div>
-                <p className="text-[13.5px] font-medium text-[#1C4042]/80 leading-relaxed mb-5">
-                  Skip the form! We'll automatically lock in the exact amount and billing cycle when this service charges your card for the first time.
-                </p>
-                <Button
-                  type="button"
-                  fullWidth
-                  disabled={submitting || (merchant.id === "custom" && !customName)}
-                  onClick={() => submit(true)}
-                  className="!h-12 !text-[15px] !bg-[#1C4042]"
-                >
-                  {submitting ? "Adding…" : "Enable Auto-Detect"}
-                </Button>
               </div>
 
               <div className="flex items-center gap-4 my-1.5 opacity-50">

@@ -270,7 +270,7 @@ export default function WithdrawFunds() {
                   placeholder="Search banks..."
                   value={bankSearch}
                   onChange={(e) => setBankSearch(e.target.value)}
-                  className="w-full rounded-[14px] border border-[#EAE7DF] bg-white py-[14px] pl-4 pr-10 text-[15px] font-semibold text-ink shadow-[0_2px_8px_rgba(20,40,45,0.04)] outline-none placeholder:text-ink-muted/70 focus:border-teal"
+                  className="w-full rounded-[14px] border border-[#EAE7DF] bg-white py-[14px] pl-4 pr-10 text-[15px] font-semibold text-ink shadow-[0_2px_8px_rgba(20,40,45,0.04)] outline-none placeholder:text-ink-muted/70 focus:border-gold"
                 />
                 <svg className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-muted/60" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />

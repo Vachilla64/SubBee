@@ -303,8 +303,8 @@ export default function SignUp() {
                     }}
                     className={`flex items-center gap-4 rounded-2xl border-2 p-5 text-left transition-all ${
                       selectedGoal === goal.id
-                        ? "border-teal bg-teal/5 shadow-sm scale-[1.02]"
-                        : "border-[#EAE7DF] bg-white shadow-sm hover:border-teal/30 hover:bg-gray-50"
+                        ? "border-gold-mid bg-white shadow-[0_6px_16px_rgba(207,154,68,0.15)] scale-[1.02]"
+                        : "border-[#EAE7DF] bg-white shadow-sm hover:border-gold-mid/30 hover:bg-gray-50"
                     }`}
                   >
                     <span className="text-2xl">{goal.icon}</span>
