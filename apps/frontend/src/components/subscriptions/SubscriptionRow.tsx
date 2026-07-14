@@ -9,6 +9,16 @@ export interface SubscriptionRowData {
   isActive: boolean;
   needsConfirmation?: boolean;
   billingDay?: number;
+  remindersEnabled?: boolean;
+}
+
+function getOrdinalSuffix(i: number) {
+  const j = i % 10,
+        k = i % 100;
+  if (j == 1 && k != 11) return i + "st";
+  if (j == 2 && k != 12) return i + "nd";
+  if (j == 3 && k != 13) return i + "rd";
+  return i + "th";
 }
 
 function getDaysUntil(billingDay?: number) {
@@ -44,7 +54,7 @@ export default function SubscriptionRow({
     : insufficient
       ? 'insufficient'
       : sub.needsConfirmation
-        ? sub.amountKobo <= 1n
+        ? sub.amountKobo <= 100n
           ? 'awaiting_charge'
           : 'needs_review'
         : sub.isActive
@@ -65,7 +75,7 @@ export default function SubscriptionRow({
       break;
     case 'awaiting_charge':
       statusText = 'Auto-detecting on next charge...';
-      statusColor = 'text-teal';
+      statusColor = 'text-gold-dark';
       break;
     case 'needs_review':
       statusText = 'Action required: Review setup';
@@ -101,10 +111,28 @@ export default function SubscriptionRow({
             }}
             className="h-[42px] w-[42px] shrink-0 rounded-[14px] bg-ink/5 object-contain p-1.5 shadow-sm"
           />
-          <div className="text-[15px] font-extrabold text-ink">{sub.merchantName}</div>
+          <div>
+            <div className="text-[15px] font-extrabold text-ink leading-tight">{sub.merchantName}</div>
+            {sub.billingDay && (
+              <div className="text-[11.5px] font-bold text-ink-muted/80 mt-0.5 flex items-center gap-1.5">
+                Monthly on the {getOrdinalSuffix(sub.billingDay)}
+                {sub.remindersEnabled && (
+                  <>
+                    <span className="opacity-40">•</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold-dark"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="tabular-nums text-[14.5px] font-black text-ink">
-          {sub.needsConfirmation && sub.amountKobo <= 1n ? 'Pending' : formatNaira(sub.amountKobo)}
+        <div className="tabular-nums text-[14.5px] font-black text-ink shrink-0">
+          {sub.needsConfirmation && sub.amountKobo <= 1n ? (
+            <span className="flex items-center gap-1.5 text-gold-dark text-[13px] bg-gold-light/20 px-2 py-1 rounded-lg border border-gold/30">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+              Auto
+            </span>
+          ) : formatNaira(sub.amountKobo)}
         </div>
       </div>
       

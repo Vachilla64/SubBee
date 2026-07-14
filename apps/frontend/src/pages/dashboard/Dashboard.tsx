@@ -323,7 +323,7 @@ export default function Dashboard() {
                     <button
                       key={item.sub.id}
                       onClick={() => setActionSheetSub(item.sub)}
-                      className="mt-3 flex w-full items-center gap-3 text-left"
+                      className="mt-4 flex w-full items-center gap-3.5 text-left transition-all hover:bg-black/[0.02] p-1.5 -mx-1.5 rounded-2xl"
                     >
                       <img
                         src={`/icons/${item.sub.merchantId}.png`}
@@ -332,18 +332,29 @@ export default function Dashboard() {
                           ((e.currentTarget as HTMLElement).style.visibility =
                             "hidden")
                         }
-                        className="h-11 w-11 shrink-0 rounded-[14px] bg-ink/5 object-contain p-1.5"
+                        className="h-[46px] w-[46px] shrink-0 rounded-[16px] bg-ink/5 object-contain p-[7px] shadow-sm"
                       />
                       <div className="flex-1">
-                        <div className="text-[15px] font-extrabold text-ink">
+                        <div className="text-[15.5px] font-extrabold text-ink leading-tight">
                           {item.sub.merchantName}
                         </div>
-                        <div className="text-[12.5px] font-semibold text-[#263339]">
+                        <div className="text-[12.5px] font-bold text-ink-muted/80 mt-0.5 flex items-center gap-1.5">
                           {formatShortDate(item.date)}
+                          {item.sub.remindersEnabled && (
+                            <>
+                              <span className="opacity-40">•</span>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold-dark"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                            </>
+                          )}
                         </div>
                       </div>
-                      <span className="tabular-nums text-[15px] font-extrabold text-ink">
-                        {formatNaira(item.sub.amountKobo)}
+                      <span className="tabular-nums text-[15px] font-extrabold text-ink shrink-0">
+                        {item.sub.needsConfirmation && item.sub.amountKobo <= 1n ? (
+                          <span className="flex items-center gap-1.5 text-gold-dark text-[13px] bg-gold-light/20 px-2.5 py-1 rounded-lg border border-gold/30">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                            Auto
+                          </span>
+                        ) : formatNaira(item.sub.amountKobo)}
                       </span>
                     </button>
                   ))}
