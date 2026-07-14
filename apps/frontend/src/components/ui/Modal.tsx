@@ -56,30 +56,25 @@ const VARIANT_ICON: Record<Variant, ReactNode> = {
   ),
 };
 
-export default function Modal({ open, title, message, variant = 'info', actions, onClose }: ModalProps) {
-  if (!open) return null;
+import CenterModal from './CenterModal';
 
+export default function Modal({ open, title, message, variant = 'info', actions, onClose }: ModalProps) {
   const resolvedActions: ModalAction[] = actions ?? [{ label: 'OK', onClick: onClose, variant: 'primary' }];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center" onClick={onClose}>
-      <div
-        className="app-shell-width w-full rounded-t-[28px] bg-white p-6 pb-8 sm:rounded-[28px]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex flex-col items-center text-center">
-          {VARIANT_ICON[variant]}
-          <p className="mt-3 text-lg font-extrabold text-ink">{title}</p>
-          <p className="mt-2 text-sm font-semibold text-ink-muted">{message}</p>
-        </div>
-        <div className="mt-5 flex gap-3">
-          {resolvedActions.map((action, i) => (
-            <Button key={i} variant={action.variant ?? 'primary'} fullWidth onClick={action.onClick} disabled={action.disabled}>
-              {action.label}
-            </Button>
-          ))}
-        </div>
+    <CenterModal open={open} onClose={onClose}>
+      <div className="flex flex-col items-center text-center">
+        {VARIANT_ICON[variant]}
+        <p className="mt-4 text-lg font-extrabold text-ink leading-tight">{title}</p>
+        <p className="mt-2 text-sm font-semibold text-ink-muted leading-relaxed">{message}</p>
       </div>
-    </div>
+      <div className="mt-6 flex flex-col gap-2.5">
+        {resolvedActions.map((action, i) => (
+          <Button key={i} variant={action.variant ?? 'primary'} fullWidth onClick={action.onClick} disabled={action.disabled} className="!h-12 !text-[15px]">
+            {action.label}
+          </Button>
+        ))}
+      </div>
+    </CenterModal>
   );
 }

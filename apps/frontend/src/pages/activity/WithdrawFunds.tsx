@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { useAuth } from '../../lib/auth';
 import { useWalletData } from '../../lib/useWalletData';
 import { api } from '../../lib/api';
@@ -237,73 +237,60 @@ export default function WithdrawFunds() {
         </div>
       </BottomSheet>
 
-      <AnimatePresence>
-        {bankPickerOpen && (
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 240 }}
-            className="fixed inset-0 z-50 flex flex-col bg-[#FDF7EC]"
-          >
-            <div className="flex items-center justify-between gap-3 px-5 pb-2 pt-6">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={closeBankPicker}
-                  className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white shadow-[0_3px_10px_rgba(20,40,45,0.07)]"
-                  aria-label="Close"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E2A2E" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                </button>
-                <h1 className="text-xl font-extrabold text-ink">Select Bank</h1>
-              </div>
-            </div>
+      <BottomSheet open={bankPickerOpen} onClose={closeBankPicker}>
+        <div className="flex flex-col max-h-[75vh]">
+          <div className="flex items-center justify-between pb-3">
+            <h1 className="text-xl font-extrabold text-ink">Select Bank</h1>
+            <button
+              onClick={closeBankPicker}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-ink/5"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E2A2E" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
-            <div className="px-5 pt-2">
-              <div className="relative mb-2">
-                {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Search banks..."
-                  value={bankSearch}
-                  onChange={(e) => setBankSearch(e.target.value)}
-                  className="w-full rounded-[14px] border border-[#EAE7DF] bg-white py-[14px] pl-4 pr-10 text-[15px] font-semibold text-ink shadow-[0_2px_8px_rgba(20,40,45,0.04)] outline-none placeholder:text-ink-muted/70 focus:border-gold"
-                />
-                <svg className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-muted/60" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-                </svg>
-              </div>
-            </div>
+          <div className="relative mb-3 shrink-0">
+            {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+            <input
+              autoFocus
+              type="text"
+              placeholder="Search banks..."
+              value={bankSearch}
+              onChange={(e) => setBankSearch(e.target.value)}
+              className="w-full rounded-[14px] border border-[#EAE7DF] bg-white py-3 pl-4 pr-10 text-[15px] font-semibold text-ink shadow-sm outline-none placeholder:text-ink-muted/70 focus:border-gold"
+            />
+            <svg className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-muted/60" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+            </svg>
+          </div>
 
-            <div className="flex-1 overflow-y-auto px-5 pb-8 pt-2">
-              {filteredBanks.length === 0 ? (
-                <p className="mt-8 text-center text-sm font-semibold text-ink-muted">No banks match "{bankSearch}".</p>
-              ) : (
-                <div className="flex flex-col divide-y divide-[#EAE7DF] overflow-hidden rounded-2xl bg-white shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
-                  {filteredBanks.map((bank) => (
-                    <button
-                      key={bank.code}
-                      type="button"
-                      onClick={() => chooseBank(bank)}
-                      className="flex items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-cream-bg"
-                    >
-                      <span className="text-[14.5px] font-semibold text-ink">{bank.name}</span>
-                      {bank.code === bankCode && (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3E6247" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M20 6L9 17l-5-5" />
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          <div className="flex-1 overflow-y-auto -mx-2 px-2 pb-6 pt-2">
+            {filteredBanks.length === 0 ? (
+              <p className="mt-8 text-center text-sm font-semibold text-ink-muted">No banks match "{bankSearch}".</p>
+            ) : (
+              <div className="flex flex-col divide-y divide-[#EAE7DF] overflow-hidden rounded-2xl bg-white shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
+                {filteredBanks.map((bank) => (
+                  <button
+                    key={bank.code}
+                    type="button"
+                    onClick={() => chooseBank(bank)}
+                    className="flex items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-cream-bg"
+                  >
+                    <span className="text-[14.5px] font-semibold text-ink">{bank.name}</span>
+                    {bank.code === bankCode && (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3E6247" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   );
 }

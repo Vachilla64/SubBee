@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import TopBar from '../../components/layout/TopBar';
 import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
 import Skeleton from '../../components/ui/Skeleton';
 import { useAuth } from '../../lib/auth';
 import { useWalletData } from '../../lib/useWalletData';
@@ -238,42 +239,27 @@ export default function CardHome() {
 
       </div>
 
-      {/* Loss Aversion Warning Modal */}
-      <AnimatePresence>
-        {showPauseWarning && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-ink/40 backdrop-blur-[2px] z-40"
-              onClick={() => setShowPauseWarning(false)}
-            />
-            <div className="fixed inset-0 z-50 flex items-center justify-center px-5 pointer-events-none">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="bg-white rounded-[24px] p-6 shadow-2xl pointer-events-auto w-full max-w-[340px]"
-              >
-                <div className="w-12 h-12 rounded-full bg-salmon-alertBg border-4 border-salmon-alertBorder flex items-center justify-center mx-auto mb-4">
-                  <span className="text-xl">⚠️</span>
-                </div>
-                <h3 className="text-[20px] font-black text-center text-ink tracking-tight">Pause your card?</h3>
-                <p className="mt-2 text-[14px] font-semibold text-center text-ink-muted leading-relaxed">
-                  Freezing this card will cause your upcoming <strong className="text-ink">active subscriptions</strong> to <strong className="text-salmon-text">fail</strong>.
-                </p>
-                <div className="mt-6 flex flex-col gap-2">
-                  <Button variant="caution" fullWidth onClick={toggleFreeze} disabled={isToggling} className="!h-12 !text-[15px]">
-                    {isToggling ? 'Freezing...' : 'Yes, freeze card'}
-                  </Button>
-                  <Button variant="secondary" fullWidth onClick={() => setShowPauseWarning(false)} disabled={isToggling} className="!h-12 !text-[15px] border-transparent">
-                    Cancel
-                  </Button>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
+      <Modal
+        open={showPauseWarning}
+        onClose={() => setShowPauseWarning(false)}
+        variant="warning"
+        title="Pause your card?"
+        message="Freezing this card will cause your upcoming active subscriptions to fail."
+        actions={[
+          {
+            label: isToggling ? 'Freezing...' : 'Yes, freeze card',
+            onClick: toggleFreeze,
+            variant: 'caution',
+            disabled: isToggling
+          },
+          {
+            label: 'Cancel',
+            onClick: () => setShowPauseWarning(false),
+            variant: 'secondary',
+            disabled: isToggling
+          }
+        ]}
+      />
     </div>
   );
 }
