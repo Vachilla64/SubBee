@@ -158,12 +158,12 @@ export default function WelcomePro() {
               initial={{ opacity: 0, x: -18 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.9 + i * 0.13, duration: 0.5, ease: 'easeOut' }}
-              className="flex items-center gap-3 rounded-[20px] border border-[#E7B84F]/40 bg-[#FDF7EC]/90 px-4 py-3 shadow-[0_8px_30px_rgba(46,57,61,0.15)] backdrop-blur-xl"
+              className="flex items-start gap-3.5 rounded-[20px] border border-[#E7B84F]/30 border-b-[#E7B84F]/10 border-r-[#E7B84F]/10 bg-[#FDF7EC]/70 px-5 py-4 shadow-[0_8px_30px_rgba(46,57,61,0.15)] backdrop-blur-xl transition-all duration-300 hover:bg-[#FDF7EC]/85 hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(46,57,61,0.2)]"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1C4042]/10">{perk.icon}</div>
+              <div className="flex shrink-0 items-center justify-center pt-0.5 drop-shadow-sm">{perk.icon}</div>
               <div>
-                <div className="text-[14px] font-extrabold text-[#2E393D]">{perk.title}</div>
-                <div className="text-[12px] font-semibold text-[#5A4515] leading-snug">{perk.desc}</div>
+                <div className="text-[14px] font-black text-[#3A2A0E] tracking-tight">{perk.title}</div>
+                <div className="text-[12.5px] font-semibold text-[#5A4515]/90 leading-relaxed mt-0.5">{perk.desc}</div>
               </div>
             </motion.div>
           ))}
