@@ -10,6 +10,7 @@ export interface Subscription {
   billingDay: number;
   remindersEnabled: boolean;
   isActive: boolean;
+  needsConfirmation?: boolean;
 }
 
 export interface CardData {
