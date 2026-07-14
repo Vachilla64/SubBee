@@ -22,7 +22,6 @@ export default function AddSubscription() {
 
   // Selection Phase State
   const [search, setSearch] = useState("");
-  const [tempSelection, setTempSelection] = useState<Merchant | null>(null);
 
   // Billing Phase State
   const [amount, setAmount] = useState("");
@@ -92,15 +91,13 @@ export default function AddSubscription() {
       .replace(" Plus", "");
   };
 
-  const proceedToSetup = () => {
-    if (tempSelection) {
-      setMerchant(tempSelection);
-      setAmount(
-        tempSelection.id === "custom"
-          ? ""
-          : String(tempSelection.defaultPriceNaira),
-      );
-    }
+  const proceedToSetup = (m: Merchant) => {
+    setMerchant(m);
+    setAmount(
+      m.id === "custom"
+        ? ""
+        : String(m.defaultPriceNaira),
+    );
   };
 
   const submit = async (isAutoDetect: boolean) => {
@@ -173,23 +170,17 @@ export default function AddSubscription() {
                   {cat.label}
                 </p>
                 <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                  {cat.items.map((m) => {
-                    const selected = tempSelection?.id === m.id;
-                    return (
+                  {cat.items.map((m) => (
                       <button
                         key={m.id + cat.label}
-                        onClick={() => setTempSelection(m as Merchant)}
+                        onClick={() => proceedToSetup(m as Merchant)}
                         className="flex-shrink-0 flex flex-col items-center gap-2 w-[76px] group outline-none"
                       >
                         <div
-                          className={`relative w-[72px] h-[72px] rounded-[22px] overflow-hidden flex items-center justify-center transition-all duration-300 ${
-                            selected
-                              ? "bg-gradient-to-br from-[#E7C97E] to-[#C9A545] shadow-[0_8px_16px_-6px_rgba(201,165,69,0.5)] scale-[1.05]"
-                              : "bg-transparent border border-[#EAE7DF] hover:border-[#E7C97E]/40 hover:bg-[#E7C97E]/10"
-                          }`}
+                          className="relative w-[72px] h-[72px] rounded-[22px] overflow-hidden flex items-center justify-center transition-all duration-300 bg-transparent border border-[#EAE7DF] hover:border-[#E7C97E]/40 hover:bg-[#E7C97E]/10"
                         >
                           {m.id === "custom" ? (
-                            <span className={`text-3xl ${selected ? "text-white" : "text-ink"}`}>➕</span>
+                            <span className="text-3xl text-ink">➕</span>
                           ) : (
                             <img
                               src={`/icons/${m.id}.png`}
@@ -198,31 +189,14 @@ export default function AddSubscription() {
                             />
                           )}
                         </div>
-                        <span
-                          className={`text-[12.5px] font-bold leading-tight text-center w-full truncate transition-colors ${selected ? "text-gold-dark" : "text-ink-muted"}`}
-                        >
+                        <span className="text-[12.5px] font-bold leading-tight text-center w-full truncate transition-colors text-ink-muted">
                           {formatName(m.name)}
                         </span>
                       </button>
-                    );
-                  })}
+                  ))}
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* Bottom Fixed Action Bar */}
-          <div className="fixed bottom-0 left-0 right-0 w-full max-w-[480px] mx-auto pb-8 pt-10 px-5 bg-gradient-to-t from-[#FDF7EC] via-[#FDF7EC] to-transparent pointer-events-none">
-            <Button
-              fullWidth
-              className="!h-[56px] !text-[13px] !font-black tracking-wide !rounded-[20px] !bg-[#F4F1E5] hover:!bg-[#e8e4d3] !text-ink shadow-[0_4px_16px_rgba(20,40,45,0.06)] pointer-events-auto transition-all"
-              onClick={proceedToSetup}
-              disabled={!tempSelection}
-            >
-              {tempSelection
-                ? "CONTINUE TO SETUP"
-                : "SELECT A SERVICE TO BEGIN SETUP"}
-            </Button>
           </div>
         </div>
       )}

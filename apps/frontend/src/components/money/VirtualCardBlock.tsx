@@ -55,56 +55,54 @@ export default function VirtualCardBlock({
   return (
     <button
       onClick={() => navigate("/app/card")}
-      className={`teal-card-gradient relative block w-full  rounded-[22px]  ${overlap ? "-mt-10" : ""}`}
+      className={`teal-card-gradient relative block w-full rounded-[22px] transition-transform active:scale-95 ${overlap ? "-mt-10" : ""}`}
     >
       <img
         src="/illustrations/subbee-logo.png"
         alt=""
-        className="pointer-events-none absolute z-10 -top-[30px] right-[-14px] h-[110px] w-[120px] object-contain opacity-[0.92]"
+        className="pointer-events-none absolute z-10 -top-[10px] right-[-20px] h-[110px] w-[120px] object-contain opacity-[0.15] mix-blend-overlay"
       />
       <div
-        className={`teal-card-gradient relative block w-full overflow-hidden rounded-[22px] px-5 py-[18px] text-left text-[#E6EFEE] shadow-[0_18px_34px_-16px_rgba(10,30,30,0.85)]`}
+        className={`relative block w-full overflow-hidden rounded-[22px] px-5 py-5 text-left text-[#E6EFEE] shadow-[0_18px_34px_-16px_rgba(10,30,30,0.85)]`}
       >
-        <div className="relative flex items-center justify-between">
-          <span className="flex items-center gap-2 text-[13px] font-extrabold tracking-wide text-teal-soft3">
-            VIRTUAL CARD
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${statusChip.className}`}
-            >
-              {statusChip.label}
-            </span>
+        <div className="relative flex items-center justify-between mb-4">
+          <span className="flex items-center gap-2 text-[12px] font-extrabold tracking-widest text-white/70">
+            SUBBEE VIRTUAL
           </span>
-        </div>
-        <div className="mt-2 flex items-end gap-2">
-          <span className="tabular-nums text-3xl font-black leading-none text-white">
-            {formatNaira(balanceKobo ?? 0)}
-          </span>
-        </div>
-        <div className="mt-2.5 flex items-start gap-2 rounded-xl bg-black/15 px-2.5 py-2">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#9FC4C3"
-            strokeWidth="2.2"
-            className="mt-0.5 shrink-0"
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold tracking-wider ${statusChip.className}`}
           >
-            <rect x="4" y="11" width="16" height="10" rx="2" />
-            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-          </svg>
-          <span className="text-[11.5px] font-semibold leading-snug text-teal-softText">
-            Kept low by design. SubBee funds your card automatically the moment
-            a bill is due.
+            {statusChip.label}
           </span>
         </div>
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-[15px] font-bold tracking-[2.5px] text-[#D8E7E6]">
-            •••• •••• •••• {last4 ?? "····"}
-          </span>
-          <span className="text-xs font-extrabold text-teal-soft3">
-            Reveal ›
-          </span>
+        
+        <div className="flex flex-col gap-1 relative z-20">
+          <span className="text-[10px] font-extrabold text-teal-soft3/80 uppercase tracking-widest">Card Balance</span>
+          <div className="flex items-center gap-3">
+            <span className="tabular-nums text-[32px] font-black leading-none text-white drop-shadow-md">
+              {formatNaira(balanceKobo ?? 0)}
+            </span>
+            <div className="flex items-center gap-1.5 rounded-lg bg-black/20 px-2 py-1.5 border border-white/10 shadow-inner">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9FC4C3" strokeWidth="2.5"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+              <span className="text-[9px] font-extrabold text-teal-softText uppercase tracking-widest">Auto-funds</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-7 flex items-end justify-between relative z-20">
+          <div className="flex flex-col">
+            <span className="text-[16px] font-bold tracking-[3px] text-white/90 drop-shadow-sm font-mono">
+              •••• •••• •••• {last4 ?? "····"}
+            </span>
+            <span className="text-[9.5px] font-extrabold text-teal-soft3/70 mt-1.5 tracking-widest uppercase">
+              Tap to view details
+            </span>
+          </div>
+          {/* Glancable Mastercard-style logo indicator */}
+          <div className="flex items-center mr-1">
+            <div className="w-[28px] h-[28px] rounded-full bg-[#EB001B] opacity-90 mix-blend-screen"></div>
+            <div className="w-[28px] h-[28px] rounded-full bg-[#F79E1B] opacity-90 mix-blend-screen -ml-[14px]"></div>
+          </div>
         </div>
       </div>
     </button>

@@ -80,18 +80,24 @@ export default function RevealCardDetails() {
               </div>
             )}
 
-            <div className="mt-5 flex gap-6">
-              <div>
-                <div className="text-[9px] font-extrabold tracking-widest text-teal-soft3">EXPIRY</div>
-                <div className="tabular-nums text-[13px] font-extrabold text-[#EAF3F0] mt-0.5">
-                  {phase === 'revealed' && details ? `${details.expiry_month} / ${details.expiry_year}` : '•• / ••'}
+            <div className="mt-5 flex items-end justify-between">
+              <div className="flex gap-6">
+                <div>
+                  <div className="text-[9px] font-extrabold tracking-widest text-teal-soft3">EXPIRY</div>
+                  <div className="tabular-nums text-[13px] font-extrabold text-[#EAF3F0] mt-0.5">
+                    {phase === 'revealed' && details ? `${details.expiry_month} / ${details.expiry_year}` : '•• / ••'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] font-extrabold tracking-widest text-teal-soft3">CVV</div>
+                  <div className="tabular-nums text-[13px] font-extrabold text-[#EAF3F0] mt-0.5">
+                    {phase === 'revealed' && details ? details.cvv : '•••'}
+                  </div>
                 </div>
               </div>
-              <div>
-                <div className="text-[9px] font-extrabold tracking-widest text-teal-soft3">CVV</div>
-                <div className="tabular-nums text-[13px] font-extrabold text-[#EAF3F0] mt-0.5">
-                  {phase === 'revealed' && details ? details.cvv : '•••'}
-                </div>
+              <div className="flex items-center mt-1">
+                <div className="w-[32px] h-[32px] rounded-full bg-[#EB001B] opacity-90 mix-blend-screen"></div>
+                <div className="w-[32px] h-[32px] rounded-full bg-[#F79E1B] opacity-90 mix-blend-screen -ml-[16px]"></div>
               </div>
             </div>
 

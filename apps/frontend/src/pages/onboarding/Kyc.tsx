@@ -72,7 +72,7 @@ export default function Kyc() {
   // Micro-Animations
   const [isShaking, setIsShaking] = useState(false);
   const [showPill, setShowPill] = useState<string | null>(null);
-  const [radarPulse, setRadarPulse] = useState(false);
+  const radarPulse = false;
 
   // Form Data
   const defaultFirstName = user?.name?.split(" ")[0] || "";
@@ -109,16 +109,8 @@ export default function Kyc() {
     } else if (step === 2) {
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 400);
-      triggerPill("✓ NAME VERIFIED");
+      triggerPill("✓ DATA VERIFIED");
       paginate(3);
-    } else if (step === 3) {
-      setRadarPulse(true);
-      setTimeout(() => setRadarPulse(false), 1500);
-      triggerPill("📍 LOCATION CONFIRMED");
-      paginate(4);
-    } else if (step === 4) {
-      triggerPill("🔒 BVN CONFIRMED");
-      paginate(5);
     }
   };
 
@@ -247,19 +239,19 @@ export default function Kyc() {
     step === 1
       ? true
       : step === 2
-        ? Boolean(form.firstName.trim() && form.lastName.trim() && form.dob)
-        : step === 3
-          ? Boolean(
-              form.phone.trim().length >= 10 &&
-              form.phone.startsWith("+") &&
-              form.address.trim() &&
-              form.state &&
-              form.lga.trim() &&
-              form.postalCode.trim()
-            )
-          : step === 4
-            ? Boolean(form.bvn.length === 11)
-            : true;
+        ? Boolean(
+            form.firstName.trim() && 
+            form.lastName.trim() && 
+            form.dob &&
+            form.phone.trim().length >= 10 &&
+            form.phone.startsWith("+") &&
+            form.address.trim() &&
+            form.state &&
+            form.lga.trim() &&
+            form.postalCode.trim() &&
+            form.bvn.length === 11
+          )
+        : true;
 
   // Card specific derivations
   const blurAmount =
@@ -270,11 +262,9 @@ export default function Kyc() {
         : step === 1
           ? "12px"
           : step === 2
-            ? "8px"
-            : step === 3
-              ? "4px"
-              : "2px";
-  const progressPercent = ((step - 1) / 4) * 100;
+            ? "6px"
+            : "2px";
+  const progressPercent = ((step - 1) / 2) * 100;
 
   if (ceremonyPhase !== "none") {
     const now = new Date();
@@ -866,7 +856,7 @@ export default function Kyc() {
               Unlock Virtual Card
             </div>
             <div className="text-xs font-bold text-ink-muted">
-              Step {step} of 5
+              Step {step} of 3
             </div>
           </div>
         </div>
@@ -1028,13 +1018,10 @@ export default function Kyc() {
                 exit="exit"
                 className="absolute inset-0 flex flex-col"
               >
-                <h2 className="text-[22px] font-black tracking-tight text-ink">
-                  Who's on the card?
+                <h2 className="text-[22px] font-black tracking-tight text-ink mt-2">
+                  Personal Details
                 </h2>
-                <p className="mt-1 mb-6 text-[14px] text-ink-muted">
-                  We've pre-filled what we know.
-                </p>
-                <div className="flex flex-col gap-4">
+                <div className="mt-4 flex flex-col gap-4 overflow-y-auto pb-6 px-1 h-[400px]">
                   <TextField
                     label="First name"
                     placeholder="e.g. Adebayo"
@@ -1060,34 +1047,8 @@ export default function Kyc() {
                     value={form.dob}
                     onChange={(e) => set("dob", e.target.value)}
                   />
-                </div>
-                <div className="mt-auto mb-6 w-full">
-                  <Button
-                    fullWidth
-                    onClick={handleNext}
-                    disabled={!stepValid}
-                    className="!h-14"
-                  >
-                    Continue
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-
-            {step === 3 && (
-              <motion.div
-                key="s3"
-                custom={direction}
-                variants={formVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                className="absolute inset-0 flex flex-col"
-              >
-                <h2 className="text-[22px] font-black tracking-tight text-ink">
-                  Where should we register it?
-                </h2>
-                <div className="mt-4 flex flex-col gap-4 overflow-y-auto pb-4">
+                  
+                  {/* Address Section */}
                   <PhoneField
                     label="Phone number"
                     tooltip="Enter your Nigerian phone number. It will be securely linked to your virtual card."
@@ -1112,7 +1073,7 @@ export default function Kyc() {
                       value={form.state}
                       onChange={(e) => {
                         set("state", e.target.value);
-                        set("lga", ""); // Reset LGA when state changes
+                        set("lga", ""); 
                       }}
                     />
                     <SelectField
@@ -1142,83 +1103,54 @@ export default function Kyc() {
                     value={form.postalCode}
                     onChange={(e) => set("postalCode", e.target.value.replace(/\D/g, ""))}
                   />
+                  
+                  {/* BVN Section */}
+                  <div className="mt-4 pt-4 border-t border-[#EAE7DF]">
+                    <p className="mb-4 text-[13px] text-ink-muted font-bold flex items-center gap-1.5">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                      Bank-grade AES-256 Encryption
+                    </p>
+                    <TextField
+                      label="Bank Verification Number"
+                      placeholder="e.g. 22233344455"
+                      inputMode="numeric"
+                      pattern="\d{11}"
+                      minLength={11}
+                      maxLength={11}
+                      tooltip="Your 11-digit BVN is required by CBN regulations. It is encrypted and never stored."
+                      required
+                      value={form.bvn}
+                      onChange={(e) =>
+                        set("bvn", e.target.value.replace(/\D/g, "").slice(0, 11))
+                      }
+                    />
+                  </div>
                 </div>
-                <div className="mt-auto mb-6 w-full">
+                <div className="mt-auto mb-6 w-full pt-4">
                   <Button
                     fullWidth
                     onClick={handleNext}
                     disabled={!stepValid}
                     className="!h-14"
                   >
-                    Confirm Address
+                    Continue to PIN Setup
                   </Button>
                 </div>
               </motion.div>
             )}
 
-            {step === 4 && (
-              <motion.div
-                key="s4"
-                custom={direction}
-                variants={formVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                className="absolute inset-0 flex flex-col"
-              >
-                <h2 className="text-[22px] font-black tracking-tight text-ink">
-                  Final Security Check
-                </h2>
-                <p className="mt-1 mb-6 text-[13px] text-ink-muted font-bold flex items-center gap-1.5">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                  >
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  Bank-grade AES-256 Encryption
-                </p>
 
-                <div className="flex flex-col gap-4">
-                  <TextField
-                    label="Bank Verification Number"
-                    placeholder="e.g. 22233344455"
-                    inputMode="numeric"
-                    pattern="\d{11}"
-                    minLength={11}
-                    maxLength={11}
-                    tooltip="Your 11-digit BVN is required by CBN regulations. It is encrypted and never stored."
-                    required
-                    value={form.bvn}
-                    onChange={(e) =>
-                      set("bvn", e.target.value.replace(/\D/g, "").slice(0, 11))
-                    }
-                  />
-                  {error && (
-                    <p className="text-sm font-semibold text-salmon-text">
-                      {error}
-                    </p>
-                  )}
-                </div>
-                <div className="mt-auto mb-6 w-full">
-                  <Button
-                    fullWidth
-                    onClick={handleNext}
-                    disabled={!stepValid}
-                    className="!h-14 !bg-ink text-white"
-                  >
-                    Continue
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-
-            {step === 5 && (
+            {step === 3 && (
               <motion.div
                 key="s5"
                 custom={direction}

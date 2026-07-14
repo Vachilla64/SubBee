@@ -165,7 +165,10 @@ export default function CardHome() {
                   <div className="text-[13px] font-extrabold text-[#EAF3F0] mt-0.5">•••</div>
                 </div>
               </div>
-              <img src="/illustrations/subbee-logo.png" alt="" className="h-10 w-11 object-contain opacity-90 drop-shadow-lg" />
+              <div className="flex items-center mt-1">
+                <div className="w-[32px] h-[32px] rounded-full bg-[#EB001B] opacity-90 mix-blend-screen"></div>
+                <div className="w-[32px] h-[32px] rounded-full bg-[#F79E1B] opacity-90 mix-blend-screen -ml-[16px]"></div>
+              </div>
             </div>
           </div>
           
@@ -226,7 +229,7 @@ export default function CardHome() {
             }}
             className="flex-col !gap-1 !py-3.5 !text-[13px] !rounded-[16px] shadow-sm"
           >
-            {frozen ? 'Unfreeze' : 'Pause Sub'}
+            {frozen ? 'Unfreeze' : 'Freeze Card'}
           </Button>
           <Button variant="secondary" fullWidth onClick={() => navigate('/app/card/reveal')} className="flex-col !gap-1 !py-3.5 !text-[13px] !rounded-[16px] shadow-sm bg-white border border-[#EAE7DF]">
             Card Details
