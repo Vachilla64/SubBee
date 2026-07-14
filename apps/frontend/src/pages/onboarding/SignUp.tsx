@@ -500,6 +500,8 @@ export default function SignUp() {
                 <TextField
                   label="Full name"
                   required
+                  pattern="[a-zA-Z\s\-]+"
+                  tooltip="Enter your legal first and last name as it appears on your ID."
                   placeholder="Ada Obi"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -508,6 +510,8 @@ export default function SignUp() {
                   label="Email"
                   type="email"
                   required
+                  pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
+                  tooltip="A valid email is required to send your virtual card receipts."
                   placeholder="you@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -562,14 +566,19 @@ export default function SignUp() {
             >
               <div className="text-center mt-4 flex-1 flex flex-col justify-center items-center">
                 <motion.img
-                  src="/illustrations/bee-happy.png"
+                  src="/illustrations/subbee-logo.png"
                   alt="SubBee"
                   initial={{ scale: 0, rotate: -20 }}
                   animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15,
+                    delay: 0.1,
+                  }}
                   className="mx-auto mb-6 h-[140px] w-[140px] object-contain drop-shadow-xl"
                 />
-                <motion.h1 
+                <motion.h1
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
@@ -583,7 +592,7 @@ export default function SignUp() {
                   transition={{ delay: 0.4 }}
                   className="mt-3 text-[16px] font-semibold leading-relaxed text-ink-muted max-w-[280px]"
                 >
-                  We'll automatically track your monthly spend across <strong className="text-ink">{selectedSubs.size} services</strong>.
+                  We've successfully queued up your <strong className="text-ink">{selectedSubs.size} services</strong>.
                 </motion.p>
                 
                 <motion.div 
@@ -599,15 +608,21 @@ export default function SignUp() {
                     className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12"
                   />
                   
-                  <div className="relative z-10 text-center">
-                    <p className="text-[13px] font-extrabold uppercase tracking-widest text-teal-soft/80 mb-1">
-                      Total Tracked Spend
+                  <div className="relative z-10 text-left">
+                    <div className="flex justify-between items-center mb-4">
+                      <p className="text-[13px] font-extrabold uppercase tracking-widest text-teal-soft/90">
+                        SubBee Virtual Card
+                      </p>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-teal-soft/90" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2" />
+                        <line x1="2" y1="10" x2="22" y2="10" />
+                      </svg>
+                    </div>
+                    <p className="text-[26px] font-black tracking-tight text-white drop-shadow-md">
+                      Ready to activate
                     </p>
-                    <p className="text-[36px] font-black tracking-tight text-white drop-shadow-md">
-                      {formatNaira(totalSpend)}
-                    </p>
-                    <p className="text-[13px] font-bold text-white/90 mt-3 pt-3 border-t border-white/10 leading-snug">
-                      Next step: Set up your SubBee Virtual Card to automate your payments!
+                    <p className="text-[13.5px] font-bold text-white/90 mt-4 pt-3 border-t border-white/10 leading-snug">
+                      Your subscriptions are securely locked in. Let's generate your card to automate them!
                     </p>
                   </div>
                 </motion.div>
@@ -619,7 +634,7 @@ export default function SignUp() {
                 )}
               </div>
 
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
