@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import confetti from "canvas-confetti";
 import OnboardingShell from "../../components/layout/OnboardingShell";
 import TextField from "../../components/ui/TextField";
 import Button from "../../components/ui/Button";
@@ -124,6 +125,17 @@ export default function SignUp() {
   const { login } = useAuth();
   const { triggerTransition } = useTransition();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (step === 6) {
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ["#E9B84A", "#183739", "#BBD8D8", "#FFFFFF"],
+      });
+    }
+  }, [step]);
 
   const paginate = (newStep: number) => {
     setDirection(newStep > step ? 1 : -1);
@@ -548,32 +560,58 @@ export default function SignUp() {
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="absolute inset-0 flex flex-col"
             >
-              <div className="text-center mt-6 flex-1">
-                <img
-                  src="/illustrations/subbee-logo.png"
+              <div className="text-center mt-4 flex-1 flex flex-col justify-center items-center">
+                <motion.img
+                  src="/illustrations/bee-happy.png"
                   alt="SubBee"
-                  className="mx-auto mb-4 h-[100px] w-[100px] object-contain animate-float"
+                  initial={{ scale: 0, rotate: -20 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+                  className="mx-auto mb-6 h-[140px] w-[140px] object-contain drop-shadow-xl"
                 />
-                <h1 className="text-[26px] font-black tracking-tight text-ink">
+                <motion.h1 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-[32px] font-black tracking-tighter text-ink"
+                >
                   Welcome to the Hive!
-                </h1>
-                <p className="mt-3 text-[15px] font-medium leading-relaxed text-ink-muted">
-                  We'll automatically track your{" "}
-                  <strong className="text-ink">
-                    {formatNaira(totalSpend)}
-                  </strong>{" "}
-                  monthly spend across{" "}
-                  <strong className="text-ink">
-                    {selectedSubs.size} services
-                  </strong>
-                  .
-                </p>
-                <div className="mt-6 rounded-[20px] border border-[#B6E0BE] bg-[#EAF7ED] px-4 py-4 shadow-sm text-center">
-                  <p className="text-[14px] font-extrabold text-[#4A8A5C] leading-snug">
-                    Next step: Set up your SubBee Virtual Card to automate your
-                    payments!
-                  </p>
-                </div>
+                </motion.h1>
+                <motion.p 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="mt-3 text-[16px] font-semibold leading-relaxed text-ink-muted max-w-[280px]"
+                >
+                  We'll automatically track your monthly spend across <strong className="text-ink">{selectedSubs.size} services</strong>.
+                </motion.p>
+                
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5, type: "spring" }}
+                  className="mt-6 w-full teal-card-gradient relative overflow-hidden rounded-[24px] p-6 shadow-[0_12px_24px_-10px_rgba(24,55,57,0.5)] border border-white/10"
+                >
+                  {/* Subtle shimmer effect */}
+                  <motion.div
+                    animate={{ x: ["-100%", "200%"] }}
+                    transition={{ repeat: Infinity, duration: 3, ease: "linear", repeatDelay: 1 }}
+                    className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12"
+                  />
+                  
+                  <div className="relative z-10 text-center">
+                    <p className="text-[13px] font-extrabold uppercase tracking-widest text-teal-soft/80 mb-1">
+                      Total Tracked Spend
+                    </p>
+                    <p className="text-[36px] font-black tracking-tight text-white drop-shadow-md">
+                      {formatNaira(totalSpend)}
+                    </p>
+                    <p className="text-[13px] font-bold text-white/90 mt-3 pt-3 border-t border-white/10 leading-snug">
+                      Next step: Set up your SubBee Virtual Card to automate your payments!
+                    </p>
+                  </div>
+                </motion.div>
+
                 {error && (
                   <p className="mt-4 text-sm font-semibold text-salmon-text">
                     {error}
@@ -581,11 +619,16 @@ export default function SignUp() {
                 )}
               </div>
 
-              <div className="mb-8 mt-4 flex items-center gap-3">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                className="mb-8 mt-6 flex items-center gap-3 w-full"
+              >
                 <button
                   type="button"
                   onClick={() => paginate(5)}
-                  className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAE7DF] text-ink transition-colors hover:bg-[#dfdbd1]"
+                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#EAE7DF] text-ink transition-colors hover:bg-[#dfdbd1]"
                 >
                   <svg
                     width="24"
@@ -606,7 +649,7 @@ export default function SignUp() {
                 >
                   {submitting ? "Creating…" : "Get my virtual card"}
                 </Button>
-              </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
