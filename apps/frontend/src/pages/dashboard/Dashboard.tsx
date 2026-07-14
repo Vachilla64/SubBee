@@ -9,7 +9,6 @@ import {
   formatShortDate,
   isInsufficientFunds,
   nextChargeDate,
-  shortfallKobo,
 } from "../../lib/format";
 import BalancePanel from "../../components/money/BalancePanel";
 import VirtualCardBlock from "../../components/money/VirtualCardBlock";

@@ -103,7 +103,7 @@ export default function AddSubscription() {
     }
   };
 
-  const submit = async () => {
+  const submit = async (isAutoDetect: boolean) => {
     if (!user || !merchant) return;
     if (merchant.id === "custom" && !customName.trim()) {
       setError("Please enter a name for your custom subscription.");
@@ -117,9 +117,10 @@ export default function AddSubscription() {
         merchantId: merchant.id,
         merchantName:
           merchant.id === "custom" ? customName.trim() : merchant.name,
-        amountNaira: Number(amount),
-        billingDay: Number(billingDay),
+        amountNaira: isAutoDetect ? 1 : Number(amount),
+        billingDay: isAutoDetect ? 1 : Number(billingDay),
         remindersEnabled: reminders,
+        autoDetect: isAutoDetect,
       });
       navigate(`/app/subscriptions/${data.id}`, { replace: true });
     } catch {
@@ -184,7 +185,7 @@ export default function AddSubscription() {
                           className={`relative w-[72px] h-[72px] rounded-[22px] overflow-hidden flex items-center justify-center transition-all duration-300 ${
                             selected
                               ? "bg-gradient-to-br from-[#E7C97E] to-[#C9A545] shadow-[0_8px_16px_-6px_rgba(201,165,69,0.5)] scale-[1.05]"
-                              : "bg-white shadow-sm border border-[#EAE7DF] group-hover:border-[#E7C97E]/40 group-hover:bg-[#FCF7EA]"
+                              : "bg-transparent border border-[#EAE7DF] hover:border-[#E7C97E]/40 hover:bg-[#E7C97E]/10"
                           }`}
                         >
                           {m.id === "custom" ? (
@@ -247,7 +248,7 @@ export default function AddSubscription() {
             Choose a different service
           </button>
 
-          <div className="rounded-[24px] bg-white p-5 shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
+          <div className="rounded-[24px] bg-white p-5 shadow-[0_4px_16px_rgba(20,40,45,0.05)] mb-4">
             <div className="flex items-center gap-3">
               {merchant.id === "custom" ? (
                 <div className="h-[46px] w-[46px] shrink-0 rounded-2xl bg-[#E7B84F]/20 flex items-center justify-center p-1.5">
@@ -273,80 +274,98 @@ export default function AddSubscription() {
                 </div>
               </div>
             </div>
-
-            <div className="mt-4 flex flex-col gap-3.5">
-              {merchant.id === "custom" && (
-                <TextField
-                  label="Subscription name"
-                  type="text"
-                  required
-                  placeholder="e.g. Gym Membership"
-                  value={customName}
-                  onChange={(e) => setCustomName(e.target.value)}
-                />
-              )}
-              <TextField
-                label="Billing amount (₦)"
-                type="number"
-                min={1}
-                required
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-              <TextField
-                label="Billing day of month"
-                type="number"
-                min={1}
-                max={28}
-                required
-                value={billingDay}
-                onChange={(e) => setBillingDay(e.target.value)}
-              />
-
-              <button
-                type="button"
-                onClick={() => setReminders((r) => !r)}
-                className="flex items-center justify-between rounded-2xl bg-cream-bg px-4 py-3.5"
-              >
-                <div className="text-left">
-                  <div className="text-sm font-extrabold text-ink">
-                    Reminders
-                  </div>
-                  <div className="text-[11.5px] font-bold text-ink-muted">
-                    Alert me before this bill charges
-                  </div>
-                </div>
-                <span
-                  className={`relative h-[27px] w-[46px] shrink-0 rounded-full transition-colors ${reminders ? "bg-gold-mid" : "bg-paused-bg"}`}
-                >
-                  <span
-                    className={`absolute top-[3px] h-[21px] w-[21px] rounded-full bg-white shadow transition-all ${reminders ? "right-[3px]" : "left-[3px]"}`}
-                  />
-                </span>
-              </button>
-
-              {error && (
-                <p className="text-sm font-semibold text-salmon-text">
-                  {error}
-                </p>
-              )}
-
-              <Button
-                fullWidth
-                disabled={
-                  submitting ||
-                  !amount ||
-                  (merchant.id === "custom" && !customName)
-                }
-                onClick={submit}
-                className="mt-1 !h-14 !text-[16px]"
-              >
-                {submitting
-                  ? "Adding…"
-                  : `Add ${merchant.id === "custom" ? customName || "Subscription" : merchant.name}`}
-              </Button>
-            </div>
           </div>
+
+          <div className="flex flex-col gap-4">
+              {/* Custom Name field (only if custom merchant) */}
+              {merchant.id === "custom" && (
+                <div className="rounded-[24px] bg-white p-5 shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
+                  <TextField
+                    label="Subscription name"
+                    type="text"
+                    required
+                    placeholder="e.g. Gym Membership"
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {/* Auto-Detect Card */}
+              <div className="rounded-[24px] border-2 border-[#1C4042] p-5 bg-[#F4F9F9] shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-[16px] font-black text-[#1C4042]">Auto-Detect (Recommended)</h3>
+                  <span className="text-xl leading-none">✨</span>
+                </div>
+                <p className="text-[13.5px] font-medium text-[#1C4042]/80 leading-relaxed mb-5">
+                  Skip the form! We'll automatically lock in the exact amount and billing cycle when this service charges your card for the first time.
+                </p>
+                <Button
+                  type="button"
+                  fullWidth
+                  disabled={submitting || (merchant.id === "custom" && !customName)}
+                  onClick={() => submit(true)}
+                  className="!h-12 !text-[15px] !bg-[#1C4042]"
+                >
+                  {submitting ? "Adding…" : "Enable Auto-Detect"}
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-4 my-1.5 opacity-50">
+                <div className="h-px bg-ink/20 flex-1"></div>
+                <div className="text-[11px] font-black tracking-widest text-ink">OR</div>
+                <div className="h-px bg-ink/20 flex-1"></div>
+              </div>
+
+              {/* Manual Setup Card */}
+              <div className="rounded-[24px] border border-[#EAE7DF] p-5 bg-white shadow-[0_4px_16px_rgba(20,40,45,0.05)]">
+                <h3 className="text-[16px] font-black text-ink mb-4">Manual Setup</h3>
+                <div className="flex flex-col gap-3.5">
+                  <TextField
+                    label="Billing amount (₦)"
+                    type="number"
+                    min={1}
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
+                  <TextField
+                    label="Billing day of month"
+                    type="number"
+                    min={1}
+                    max={28}
+                    value={billingDay}
+                    onChange={(e) => setBillingDay(e.target.value)}
+                  />
+                  
+                  <button
+                    type="button"
+                    onClick={() => setReminders((r) => !r)}
+                    className="flex items-center justify-between rounded-[14px] bg-cream-bg px-4 py-3.5 mt-1"
+                  >
+                    <div className="text-left">
+                      <div className="text-sm font-extrabold text-ink">Reminders</div>
+                      <div className="text-[11.5px] font-bold text-ink-muted">Alert me before this bill charges</div>
+                    </div>
+                    <span className={`relative h-[27px] w-[46px] shrink-0 rounded-full transition-colors ${reminders ? "bg-gold-mid" : "bg-paused-bg"}`}>
+                      <span className={`absolute top-[3px] h-[21px] w-[21px] rounded-full bg-white shadow transition-all ${reminders ? "right-[3px]" : "left-[3px]"}`} />
+                    </span>
+                  </button>
+
+                  {error && <p className="text-sm font-semibold text-salmon-text mt-1">{error}</p>}
+                  
+                  <Button
+                    type="button"
+                    fullWidth
+                    variant="secondary"
+                    disabled={submitting || !amount || !billingDay || (merchant.id === "custom" && !customName)}
+                    onClick={() => submit(false)}
+                    className="mt-2 !h-12 !text-[15px]"
+                  >
+                    {submitting ? "Adding…" : `Add Manually`}
+                  </Button>
+                </div>
+              </div>
+            </div>
         </div>
       )}
     </div>
