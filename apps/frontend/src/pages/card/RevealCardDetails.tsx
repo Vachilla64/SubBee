@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import TopBar from '../../components/layout/TopBar';
 import Button from '../../components/ui/Button';
 import Skeleton from '../../components/ui/Skeleton';
@@ -53,46 +54,57 @@ export default function RevealCardDetails() {
     <div>
       <TopBar title="Card Details" back />
       <div className="flex flex-col gap-4 px-5">
-        <div className="teal-card-gradient relative overflow-hidden rounded-[22px] p-5 text-[#E6EFEE] shadow-[0_18px_34px_-16px_rgba(10,30,30,0.85)]">
-          <div className="flex items-center justify-between">
-            <span className="text-[12.5px] font-extrabold tracking-wide text-teal-soft3">SUBBEE VIRTUAL</span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(156,192,165,0.22)] px-2.5 py-1 text-[11px] font-extrabold text-[#B6E0BE]">
-              ✓ ACTIVE
-            </span>
-          </div>
-
-          {phase === 'loading' ? (
-            <Skeleton className="mt-6 h-6 w-52 !bg-white/10" />
-          ) : (
-            <div className="tabular-nums mt-[22px] text-xl font-extrabold tracking-[3px] text-white">
-              {phase === 'revealed' && details?.card_number ? details.card_number.replace(/(.{4})/g, '$1 ').trim() : `•••• •••• •••• ${card.last4 ?? '····'}`}
+        <div className="relative overflow-hidden rounded-[24px] p-6 text-[#E6EFEE] shadow-[0_20px_40px_-10px_rgba(20,40,45,0.4)] border border-white/20"
+             style={{ background: "linear-gradient(150deg, #2E6264 0%, #1C4042 52%, #143032 100%)" }}
+        >
+          {/* Subtle shimmer effect */}
+          <motion.div
+            animate={{ x: ["-100%", "200%"] }}
+            transition={{ repeat: Infinity, duration: 4, ease: "linear", repeatDelay: 2 }}
+            className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 pointer-events-none"
+          />
+          
+          <div className="relative z-10">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-extrabold tracking-wide text-teal-soft3 drop-shadow-sm uppercase">SUBBEE VIRTUAL</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#B6E0BE]/20 px-2.5 py-1 text-[10px] font-black tracking-wider shadow-sm text-[#B6E0BE]">
+                ✓ ACTIVE
+              </span>
             </div>
-          )}
 
-          <div className="mt-4 flex gap-6">
-            <div>
-              <div className="text-[9.5px] font-extrabold tracking-wide text-teal-soft3">EXPIRY</div>
-              <div className="tabular-nums text-sm font-extrabold text-[#EAF3F0]">
-                {phase === 'revealed' && details ? `${details.expiry_month} / ${details.expiry_year}` : '•• / ••'}
+            {phase === 'loading' ? (
+              <Skeleton className="mt-8 mb-2 h-6 w-52 !bg-white/10" />
+            ) : (
+              <div className="tabular-nums mt-8 mb-2 text-[22px] font-extrabold tracking-[4px] text-white drop-shadow-md">
+                {phase === 'revealed' && details?.card_number ? details.card_number.replace(/(.{4})/g, '$1 ').trim() : `•••• •••• •••• ${card.last4 ?? '····'}`}
+              </div>
+            )}
+
+            <div className="mt-5 flex gap-6">
+              <div>
+                <div className="text-[9px] font-extrabold tracking-widest text-teal-soft3">EXPIRY</div>
+                <div className="tabular-nums text-[13px] font-extrabold text-[#EAF3F0] mt-0.5">
+                  {phase === 'revealed' && details ? `${details.expiry_month} / ${details.expiry_year}` : '•• / ••'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[9px] font-extrabold tracking-widest text-teal-soft3">CVV</div>
+                <div className="tabular-nums text-[13px] font-extrabold text-[#EAF3F0] mt-0.5">
+                  {phase === 'revealed' && details ? details.cvv : '•••'}
+                </div>
               </div>
             </div>
-            <div>
-              <div className="text-[9.5px] font-extrabold tracking-wide text-teal-soft3">CVV</div>
-              <div className="tabular-nums text-sm font-extrabold text-[#EAF3F0]">
-                {phase === 'revealed' && details ? details.cvv : '•••'}
-              </div>
-            </div>
-          </div>
 
-          {phase === 'revealed' && (
-            <div className="relative mt-4 flex items-center gap-1.5 text-[11px] font-bold text-teal-softText">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9FC4C3" strokeWidth="2.4">
-                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              Hides automatically in 0:{secondsLeft.toString().padStart(2, '0')} · never stored
-            </div>
-          )}
+            {phase === 'revealed' && (
+              <div className="relative mt-5 pt-3 border-t border-white/10 flex items-center gap-2 text-[11px] font-bold text-teal-softText">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9FC4C3" strokeWidth="2.4">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                Hides automatically in 0:{secondsLeft.toString().padStart(2, '0')} · never stored
+              </div>
+            )}
+          </div>
         </div>
 
         {phase === 'confirm' && (
