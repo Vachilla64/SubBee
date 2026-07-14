@@ -338,12 +338,23 @@ bot.on('message:text', async (ctx) => {
   }
 });
 
+// Required by grammY: without this, an error thrown by any handler stops
+// polling and rethrows out of bot.start(), which is unhandled below and
+// would crash the whole process (HTTP server, webhooks, workers included).
+bot.catch((err) => {
+  console.error(`[telegram/bot] Unhandled error for update ${err.ctx.update.update_id}:`, err.error);
+});
+
 // Start the bot using long polling in local/dev environments
 if (config.NODE_ENV !== 'test') {
   bot.start({
     onStart: (info) => {
       console.log(`[telegram/bot] Bot @${info.username} started successfully.`);
     },
+  }).catch((err) => {
+    // init() (getMe) failures — bad token, network outage at boot — land here.
+    // Never let this take the whole server down; the bot is a dependent feature, not core.
+    console.error('[telegram/bot] Bot failed to start long polling:', err);
   });
 
   // Enable graceful stop for nodemon reloads
