@@ -32,15 +32,18 @@ function greeting() {
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { loading, walletKobo, card, subscriptions, refetch } =
-    useWalletData();
+  const { loading, walletKobo, card, subscriptions, refetch } = useWalletData();
 
   const activeSubs = subscriptions.filter((s) => s.isActive);
-  const withDates = activeSubs
+  const upcomingSubs = activeSubs.filter((s) => !s.needsConfirmation);
+  const withDates = upcomingSubs
     .map((s) => ({ sub: s, date: nextChargeDate(s.billingDay) }))
     .sort((a, b) => a.date.getTime() - b.date.getTime());
-  const nearest = withDates[0];
-  const nearestShort = nearest ? shortfallKobo(nearest.sub, walletKobo) : 0n;
+  
+  const dueSoon = withDates.filter((item) => Math.max(0, daysUntil(item.date)) <= 3);
+  const totalDueSoon = dueSoon.reduce((acc, curr) => acc + curr.sub.amountKobo, 0n);
+  const totalShortfall = walletKobo < totalDueSoon ? totalDueSoon - walletKobo : 0n;
+  const nearest = dueSoon[0]; // For the T-X days badge
 
   const previewSubs = subscriptions.slice(0, 3);
 
@@ -99,11 +102,15 @@ export default function Dashboard() {
     clearPending();
     await refetch();
     if (succeeded === total) {
-      toast.success(`${succeeded} subscription${succeeded === 1 ? "" : "s"} set up!`);
+      toast.success(
+        `${succeeded} subscription${succeeded === 1 ? "" : "s"} set up!`,
+      );
     } else if (succeeded > 0) {
       toast.error(`${succeeded} of ${total} set up - add the rest anytime.`);
     } else {
-      toast.error("Couldn't set those up automatically - add them manually anytime.");
+      toast.error(
+        "Couldn't set those up automatically - add them manually anytime.",
+      );
     }
   };
 
@@ -264,18 +271,22 @@ export default function Dashboard() {
                 <div className="mt-3">
                   <SkeletonRows count={1} />
                 </div>
-              ) : !nearest ? (
+              ) : dueSoon.length === 0 ? (
                 <p className="mt-2 text-[12.5px] font-semibold text-ink-muted">
-                  Add a subscription to see upcoming charges here.
+                  {subscriptions.length > 0 
+                    ? "No payments due in the next 3 days."
+                    : "Add a subscription to see upcoming charges here."}
                 </p>
               ) : (
                 <>
                   <div
                     className={`mt-1.5 flex items-center gap-1.5 text-[12.5px] font-bold ${
-                      nearestShort > 0n ? "text-salmon-text" : "text-active-text"
+                      totalShortfall > 0n
+                        ? "text-salmon-text"
+                        : "text-active-text"
                     }`}
                   >
-                    {nearestShort > 0n ? (
+                    {totalShortfall > 0n ? (
                       <svg
                         width="14"
                         height="14"
@@ -304,35 +315,39 @@ export default function Dashboard() {
                         <path d="M20 6L9 17l-5-5" />
                       </svg>
                     )}
-                    {nearestShort > 0n
-                      ? `Short ${formatNaira(nearestShort)} - tap to top up`
+                    {totalShortfall > 0n
+                      ? `Short ${formatNaira(totalShortfall)} - top up your wallet`
                       : "All upcoming subscriptions fully covered."}
                   </div>
-                  <button
-                    onClick={() => setActionSheetSub(nearest.sub)}
-                    className="mt-3 flex w-full items-center gap-3 text-left"
-                  >
-                    <img
-                      src={`/icons/${nearest.sub.merchantId}.png`}
-                      alt=""
-                      onError={(e) =>
-                        ((e.currentTarget as HTMLElement).style.visibility =
-                          "hidden")
-                      }
-                      className="h-11 w-11 shrink-0 rounded-xl bg-ink/5 object-contain p-1"
-                    />
-                    <div className="flex-1">
-                      <div className="text-[15px] font-extrabold text-ink">
-                        {nearest.sub.merchantName}
+                  
+                  {dueSoon.map((item) => (
+                    <button
+                      key={item.sub.id}
+                      onClick={() => setActionSheetSub(item.sub)}
+                      className="mt-3 flex w-full items-center gap-3 text-left"
+                    >
+                      <img
+                        src={`/icons/${item.sub.merchantId}.png`}
+                        alt=""
+                        onError={(e) =>
+                          ((e.currentTarget as HTMLElement).style.visibility =
+                            "hidden")
+                        }
+                        className="h-11 w-11 shrink-0 rounded-[14px] bg-ink/5 object-contain p-1.5"
+                      />
+                      <div className="flex-1">
+                        <div className="text-[15px] font-extrabold text-ink">
+                          {item.sub.merchantName}
+                        </div>
+                        <div className="text-[12.5px] font-semibold text-[#263339]">
+                          {formatShortDate(item.date)}
+                        </div>
                       </div>
-                      <div className="text-[12.5px] font-semibold text-[#263339]">
-                        {formatShortDate(nearest.date)}
-                      </div>
-                    </div>
-                    <span className="tabular-nums text-base font-extrabold text-ink">
-                      {formatNaira(nearest.sub.amountKobo)}
-                    </span>
-                  </button>
+                      <span className="tabular-nums text-[15px] font-extrabold text-ink">
+                        {formatNaira(item.sub.amountKobo)}
+                      </span>
+                    </button>
+                  ))}
                 </>
               )}
             </div>
@@ -346,13 +361,15 @@ export default function Dashboard() {
 
         {/* Upgrade Banner */}
         {!user?.isPro && (
-          <div 
-            onClick={() => navigate('/app/upgrade')}
+          <div
+            onClick={() => navigate("/app/upgrade")}
             className="mt-4 mx-1 rounded-[20px] bg-gradient-to-r from-[#E7B84F] to-[#DFAE44] p-4 flex items-center justify-between shadow-[0_8px_16px_-6px_rgba(207,154,68,0.4)] cursor-pointer transition-transform active:scale-95"
           >
             <div>
               <div className="text-[14px] font-black text-[#3A2A0E] flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#3A2A0E"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#3A2A0E">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                </svg>
                 Unlock SubBee Pro
               </div>
               <div className="text-[12px] font-semibold text-[#5A4515] mt-0.5">
@@ -360,14 +377,23 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3A2A0E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#3A2A0E"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9 18l6-6-6-6" />
+              </svg>
             </div>
           </div>
         )}
 
-        <div
-          className="flex items-center justify-between px-1 mt-5"
-        >
+        <div className="flex items-center justify-between px-1 mt-5">
           <span className="text-[17px] font-extrabold text-ink">
             My Subscriptions
           </span>
@@ -432,6 +458,31 @@ export default function Dashboard() {
                 );
               })
             )}
+
+            <button
+              onClick={() => {
+                if (!user?.isPro && subscriptions.length >= 7) {
+                  navigate("/app/upgrade");
+                } else {
+                  navigate("/app/subscriptions/add");
+                }
+              }}
+              className="mt-1 flex items-center justify-center gap-2 rounded-[18px] border-2 border-dashed border-[#C4B58C] bg-[#F7F1E2] px-4 py-4 text-[14.5px] font-extrabold text-[#8A7A55] transition-colors hover:bg-[#F1E9D4]"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#8A7A55"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Add Subscription
+            </button>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -443,11 +494,23 @@ export default function Dashboard() {
         message={`You picked ${pendingSubs.length} subscription${pendingSubs.length === 1 ? "" : "s"} during signup (${pendingSubs
           .slice(0, 3)
           .map((p) => p.service_name)
-          .join(", ")}${pendingSubs.length > 3 ? ` +${pendingSubs.length - 3} more` : ""}). Want SubBee to set them up automatically, or would you rather do it yourself?`}
+          .join(
+            ", ",
+          )}${pendingSubs.length > 3 ? ` +${pendingSubs.length - 3} more` : ""}). Want SubBee to set them up automatically, or would you rather do it yourself?`}
         onClose={() => setShowPendingModal(false)}
         actions={[
-          { label: settingUp ? "Setting up…" : "Auto-setup all", onClick: autoSetupPending, variant: "primary", disabled: settingUp },
-          { label: "I'll set them up myself", onClick: setUpManually, variant: "ghost", disabled: settingUp },
+          {
+            label: settingUp ? "Setting up…" : "Auto-setup all",
+            onClick: autoSetupPending,
+            variant: "primary",
+            disabled: settingUp,
+          },
+          {
+            label: "I'll set them up myself",
+            onClick: setUpManually,
+            variant: "ghost",
+            disabled: settingUp,
+          },
         ]}
       />
 
