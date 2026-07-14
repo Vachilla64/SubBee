@@ -17,7 +17,7 @@ export default function Paywall() {
     // Delay the appearance of UI details so the background image can be appreciated first
     const timer = setTimeout(() => {
       setContentVisible(true);
-    }, 1000);
+    }, 100);
     return () => clearTimeout(timer);
   }, []);
 
@@ -113,7 +113,8 @@ export default function Paywall() {
               <p
                 className={`mt-4 text-[16px] font-semibold text-[#5A4515] leading-relaxed max-w-[280px] transition-all duration-1000 delay-[1500ms] ${contentVisible && step === 1 ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
               >
-                Put your bills on autopilot, unlock your shiny gold card, and take back your time.
+                Put your bills on autopilot, unlock your shiny gold card, and
+                take back your time.
               </p>
             </div>
           </div>

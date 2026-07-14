@@ -55,31 +55,48 @@ const worker = new Worker(
       }
       const userId = userRes.rows[0].user_id;
 
-      // Ensure we don't duplicate subscriptions for the same merchant
+      // Check for existing subscriptions for the same merchant
       const existingSub = await db.query(
-        'SELECT id FROM subscriptions WHERE user_id = $1 AND merchant_name ILIKE $2', 
+        'SELECT id, needs_confirmation, is_auto_detected FROM subscriptions WHERE user_id = $1 AND merchant_name ILIKE $2', 
         [userId, `%${merchantName}%`]
       );
 
+      const billingDay = new Date().getDate(); // Default billing day to today
+      const telegramRes = await db.query('SELECT telegram_chat_id FROM users WHERE id = $1', [userId]);
+      const telegramChatId = telegramRes.rows[0]?.telegram_chat_id;
+
       if (existingSub.rowCount === 0) {
-        const billingDay = new Date().getDate(); // Default billing day to today
-        
+        // Pure discovery mode: Create a brand new subscription from scratch
         await db.query(
           `INSERT INTO subscriptions (user_id, merchant_id, merchant_name, amount_kobo, billing_day, reminders_enabled, is_active, is_auto_detected, needs_confirmation) 
            VALUES ($1, $2, $3, $4, $5, TRUE, TRUE, TRUE, TRUE)`,
           [userId, `auto_${crypto.randomUUID()}`, merchantName, amountKobo, billingDay]
         );
 
-        // Alert user
-        const telegramRes = await db.query('SELECT telegram_chat_id FROM users WHERE id = $1', [userId]);
-        const telegramChatId = telegramRes.rows[0]?.telegram_chat_id;
-        
         if (telegramChatId) {
           bot.api.sendMessage(
             telegramChatId,
             `🐝 *Subscription Detected!*\n\nWe noticed a ₦${(amountKobo / 100).toFixed(2)} charge from *${merchantName}*.\nWe've automatically added this to your subscriptions! Please visit the web dashboard to confirm the billing cycle.`,
             { parse_mode: 'Markdown' }
           ).catch(err => console.error(err));
+        }
+      } else {
+        // A user might have set this up manually via "Auto-Detect" toggle and we are waiting for the first charge to lock it in
+        const pendingSub = existingSub.rows.find(sub => sub.needs_confirmation && sub.is_auto_detected);
+        if (pendingSub) {
+          console.log(`[worker/card] Locking in auto-detect details for subscription ${pendingSub.id}...`);
+          await db.query(
+            'UPDATE subscriptions SET amount_kobo = $1, billing_day = $2 WHERE id = $3',
+            [amountKobo, billingDay, pendingSub.id]
+          );
+
+          if (telegramChatId) {
+            bot.api.sendMessage(
+              telegramChatId,
+              `✅ *Auto-Detect Successful!*\n\nWe just locked in your *${merchantName}* subscription at ₦${(amountKobo / 100).toFixed(2)} based on their latest charge. Please open the SubBee app to review and confirm these details!`,
+              { parse_mode: 'Markdown' }
+            ).catch(err => console.error(err));
+          }
         }
       }
 

@@ -150,3 +150,38 @@ export function ProfileIcon({ active }: { active: boolean }) {
     </svg>
   );
 }
+
+export function SubscriptionIcon({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="33"
+      height="33"
+      viewBox="0 0 24 24"
+      style={{ opacity: active ? 1 : 0.55, transition: "opacity 0.2s" }}
+    >
+      <rect x="3" y="4" width="18" height="16" rx="3" fill="#E7B84F" />
+      <path
+        d="M8 9H16M8 13H16M8 17H12"
+        stroke="#3B2C12"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function CardIcon({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="33"
+      height="33"
+      viewBox="0 0 24 24"
+      style={{ opacity: active ? 1 : 0.55, transition: "opacity 0.2s" }}
+    >
+      <rect x="2" y="6" width="20" height="13" rx="3" fill="#E7B84F" />
+      <path d="M2 11H22" stroke="#3B2C12" strokeWidth="2.5" />
+      <circle cx="17" cy="15" r="1.5" fill="#3B2C12" />
+      <circle cx="13" cy="15" r="1.5" fill="#3B2C12" />
+    </svg>
+  );
+}

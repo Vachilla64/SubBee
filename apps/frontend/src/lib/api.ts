@@ -167,7 +167,15 @@ export const api = {
   },
 
   // NOTE: amountNaira is expected here by the backend (it converts to Kobo internally)
-  async addSubscription(data: any) {
+  async addSubscription(data: {
+    email: string;
+    merchantId: string;
+    merchantName: string;
+    amountNaira: number;
+    billingDay: number;
+    remindersEnabled: boolean;
+    autoDetect?: boolean;
+  }) {
     const res = await fetch(`${API_BASE_URL}/subscriptions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -178,7 +186,7 @@ export const api = {
   },
 
   // Use to Pause (isActive: false) or Resume (isActive: true)
-  async editSubscription(id: string, updates: { isActive?: boolean; amountNaira?: number; billingDay?: number; remindersEnabled?: boolean }) {
+  async editSubscription(id: string, updates: { isActive?: boolean; amountNaira?: number; billingDay?: number; remindersEnabled?: boolean; needsConfirmation?: boolean }) {
     const res = await fetch(`${API_BASE_URL}/subscriptions/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

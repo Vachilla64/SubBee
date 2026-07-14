@@ -353,10 +353,10 @@ export default function SignUp() {
             >
               <div className="text-center mt-2">
                 <h1 className="text-[24px] font-black tracking-tight text-ink">
-                  Which of these do you use?.
+                  Which subscriptions do you want to move to SubBee?
                 </h1>
                 <p className="mt-1 text-[14px] font-medium leading-relaxed text-ink-muted">
-                  We've highlighted a few popular ones for you.
+                  Pick a few to add to your wishlist. You can set them up later.
                 </p>
               </div>
 
@@ -584,7 +584,7 @@ export default function SignUp() {
                   transition={{ delay: 0.4 }}
                   className="mt-3 text-[16px] font-semibold leading-relaxed text-ink-muted max-w-[280px]"
                 >
-                  We've successfully queued up your <strong className="text-ink">{selectedSubs.size} services</strong>.
+                  We've added <strong className="text-ink">{selectedSubs.size} subscriptions</strong> to your wishlist! Let's get your virtual card ready so we can hook them up.
                 </motion.p>
                 
                 <motion.div 

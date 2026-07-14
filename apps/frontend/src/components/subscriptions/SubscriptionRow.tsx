@@ -110,8 +110,8 @@ export default function SubscriptionRow({
   return (
     <button
       onClick={onClick ?? (() => navigate(`/app/subscriptions/${sub.id}`))}
-      className={`flex w-full flex-col text-left transition-all duration-300 active:scale-[0.98] group ${
-        embedded ? 'py-3' : 'rounded-[24px] bg-white border border-[#EAE7DF]/60 p-4 shadow-[0_4px_16px_rgba(20,40,45,0.03)] hover:shadow-[0_8px_24px_rgba(231,201,126,0.15)] hover:border-gold/40 hover:-translate-y-0.5 mb-3 relative overflow-hidden'
+      className={`flex w-full flex-col text-left transition-transform active:scale-95 group ${
+        embedded ? 'py-3' : 'rounded-[24px] bg-white border border-[#EAE7DF]/60 p-4 shadow-[0_4px_16px_rgba(20,40,45,0.04)] mb-3 relative overflow-hidden'
       }`}
     >
       <div className="flex w-full items-start justify-between gap-3 relative z-10">
@@ -122,10 +122,10 @@ export default function SubscriptionRow({
             onError={(e) => {
               (e.currentTarget as HTMLElement).style.visibility = 'hidden';
             }}
-            className="h-[48px] w-[48px] shrink-0 rounded-[16px] bg-gradient-to-br from-[#FDFBF7] to-[#F4EFE6] object-contain p-2.5 border border-white shadow-[0_2px_8px_rgba(20,40,45,0.06)] group-hover:scale-105 transition-transform duration-300"
+            className="h-[48px] w-[48px] shrink-0 rounded-[16px] bg-[#F7F1E2]/50 object-contain p-2.5 border border-gold/10 shadow-sm"
           />
           <div className="flex flex-col mt-0.5">
-            <span className="text-[17px] font-black text-ink leading-tight tracking-tight group-hover:text-gold-dark transition-colors duration-300">{sub.merchantName}</span>
+            <span className="text-[17px] font-black text-ink leading-tight tracking-tight">{sub.merchantName}</span>
             {sub.billingDay && (
               <span className="text-[12px] font-bold text-ink-muted mt-1 flex items-center gap-1.5">
                 Monthly • {getOrdinalSuffix(sub.billingDay)}
@@ -142,7 +142,7 @@ export default function SubscriptionRow({
         
         <div className="text-right flex flex-col items-end gap-1 mt-0.5">
           {sub.needsConfirmation && sub.amountKobo <= 1n ? (
-            <span className="flex items-center gap-1 text-[#3A2A0E] text-[10px] font-black tracking-widest uppercase bg-gradient-to-r from-[#F2CE7C] to-[#E7B84F] px-2.5 py-1 rounded-md shadow-sm border border-white/40 ring-1 ring-black/5">
+            <span className="flex items-center gap-1 text-[#3A2A0E] text-[10px] font-black tracking-widest uppercase bg-gradient-to-r from-[#F2CE7C] to-[#E7B84F] px-2.5 py-1 rounded-md shadow-sm">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
               Auto
             </span>
@@ -154,7 +154,7 @@ export default function SubscriptionRow({
         </div>
       </div>
       
-      <div className="my-3.5 h-[1.5px] w-full bg-gradient-to-r from-[#F2ECE0]/40 via-[#F2ECE0] to-[#F2ECE0]/40 group-hover:via-gold/20 transition-colors duration-500" />
+      <div className="my-3.5 h-[1.5px] w-full bg-gradient-to-r from-[#F2ECE0]/40 via-[#F2ECE0] to-[#F2ECE0]/40" />
       
       <div className={`flex items-center justify-between w-full`}>
         <div className={`text-[12.5px] font-bold flex items-center gap-2.5 ${statusColor}`}>
@@ -163,7 +163,7 @@ export default function SubscriptionRow({
           </div>
           <span className="tracking-wide">{statusText}</span>
         </div>
-        <div className="text-ink-muted/30 group-hover:text-gold group-hover:translate-x-1 transition-all duration-300">
+        <div className="text-ink-muted/30 group-hover:text-gold transition-colors">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </div>
       </div>

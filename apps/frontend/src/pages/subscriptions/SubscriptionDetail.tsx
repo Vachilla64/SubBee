@@ -43,6 +43,8 @@ export default function SubscriptionDetail() {
 
   const insufficient = isInsufficientFunds(sub, walletKobo);
   const nextDate = nextChargeDate(sub.billingDay);
+  const isPending = sub.needsConfirmation && sub.amountKobo <= 100n;
+  const needsReview = sub.needsConfirmation && sub.amountKobo > 100n;
 
   const togglePause = async () => {
     setBusy(true);
@@ -92,26 +94,69 @@ export default function SubscriptionDetail() {
             className="h-[60px] w-[60px] rounded-[18px] bg-ink/5 object-contain p-2 shadow-[0_6px_14px_-6px_rgba(0,0,0,0.4)]"
           />
           <div className="mt-3 text-xl font-black text-ink">{sub.merchantName}</div>
-          <StatusChip status={insufficient ? 'insufficient' : sub.isActive ? 'active' : 'paused'} className="mt-2" />
+          <StatusChip status={insufficient ? 'insufficient' : needsReview ? 'needs_review' : isPending ? 'awaiting_charge' : sub.isActive ? 'active' : 'paused'} className="mt-2" />
 
           <div className="mt-4.5 flex w-full gap-3">
             <div className="flex-1 rounded-[14px] bg-[#F9F5EC] p-3">
               <div className="text-[11px] font-extrabold tracking-wide text-ink-faint">AMOUNT</div>
-              <div className="tabular-nums text-lg font-black text-ink">{formatNaira(sub.amountKobo)}</div>
+              <div className="tabular-nums text-lg font-black text-ink">{isPending ? 'Pending' : formatNaira(sub.amountKobo)}</div>
             </div>
             <div className="flex-1 rounded-[14px] bg-[#F9F5EC] p-3">
               <div className="text-[11px] font-extrabold tracking-wide text-ink-faint">BILLS ON</div>
-              <div className="text-lg font-black text-ink">Day {sub.billingDay}</div>
+              <div className="text-lg font-black text-ink">{isPending ? 'Pending' : `Day ${sub.billingDay}`}</div>
             </div>
           </div>
 
-          {sub.isActive && (
+          {sub.isActive && !isPending && !needsReview && (
             <div className="mt-3 flex w-full items-center justify-between rounded-[14px] bg-[#F1EEE7] px-4 py-3">
               <span className="text-[13px] font-bold text-paused-text">Next charge</span>
               <span className="text-sm font-black text-ink">{formatShortDate(nextDate)}</span>
             </div>
           )}
+
+          {sub.isActive && isPending && (
+            <div className="mt-3 flex w-full items-center justify-center rounded-[14px] bg-[#F1EEE7] px-4 py-3">
+              <span className="text-[12.5px] font-bold text-paused-text text-center">⏳ Awaiting first charge to lock in details</span>
+            </div>
+          )}
         </div>
+
+        {needsReview && (
+          <div className="rounded-[20px] bg-[#FFE7D6] p-4.5 shadow-[0_4px_16px_rgba(20,40,45,0.05)] border border-[#FBC9A4]">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 shrink-0 text-2xl">👀</div>
+              <div className="flex-1">
+                <h3 className="text-[15px] font-black text-[#A64714]">Review details</h3>
+                <p className="mt-1 text-[13px] font-semibold text-[#A64714]/80 leading-relaxed">
+                  We locked in the amount and date from the latest charge. Does this look right?
+                </p>
+                <div className="mt-3.5 flex gap-2 w-full">
+                  <Button
+                    variant="primary"
+                    className="flex-1 !h-10 !text-[13px] !bg-[#A64714] border border-transparent"
+                    onClick={async () => {
+                      setBusy(true);
+                      await api.editSubscription(sub.id, { needsConfirmation: false });
+                      await refetch();
+                      setBusy(false);
+                    }}
+                    disabled={busy}
+                  >
+                    Looks Good
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="flex-1 !h-10 !text-[13px] !border-[#A64714]/30 !text-[#A64714] bg-white hover:bg-[#A64714]/5"
+                    onClick={() => navigate(`/app/subscriptions/${sub.id}/edit`)}
+                    disabled={busy}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {insufficient && (
           <ActionRequiredCard

@@ -134,27 +134,6 @@ export default function Profile() {
               </span>
             </button>
 
-            <button
-              onClick={() => navigate("/app/profile/channels/whatsapp")}
-              className="flex w-full items-center gap-3 rounded-[18px] bg-white px-4 py-3 text-left shadow-[0_3px_12px_rgba(20,40,45,0.05)]"
-            >
-              <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px] bg-[#25D366]">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF">
-                  <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.26A10 10 0 1 0 12 2z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <div className="text-[15px] font-extrabold text-ink">
-                  WhatsApp
-                </div>
-                <div className="text-xs font-bold text-ink-muted">
-                  Not yet available
-                </div>
-              </div>
-              <span className="rounded-full bg-[#F1EEE7] px-2.5 py-1.5 text-[11px] font-extrabold text-[#8A7A55]">
-                ● OFF
-              </span>
-            </button>
           </div>
         </div>
 

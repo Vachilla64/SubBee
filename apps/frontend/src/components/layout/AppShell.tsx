@@ -1,11 +1,15 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { DashboardIcon, ProfileIcon, ActivityIcon } from "./NavIcons";
+import { DashboardIcon, ActivityIcon, ProfileIcon } from "./NavIcons";
 import { motion } from "framer-motion";
 
 const TABS = [
   {
     to: "/app/dashboard",
-    match: ["/app/dashboard", "/app/notifications"],
+    match: [
+      "/app/dashboard",
+      "/app/notifications",
+      "/app/card",
+    ],
     label: "Home",
     Icon: DashboardIcon,
   },
@@ -37,7 +41,7 @@ export default function AppShell() {
             <svg
               viewBox="0 0 375 100"
               preserveAspectRatio="none"
-              className="absolute bottom-1 left-0 right-0 z-0 h-[105%] w-full"
+              className="absolute bottom-0 left-0 right-0 z-0 h-full w-full"
             >
               <path
                 d="
@@ -60,7 +64,6 @@ export default function AppShell() {
             <div className="relative w-full bottom-0 left-0 right-0 z-10 flex h-auto items-start justify-around px-6 pb-2">
               {TABS.map(({ to, match, label, Icon }) => {
                 const active = match.some((m) => pathname.startsWith(m));
-                
                 return (
                   <NavLink
                     key={to}
@@ -70,13 +73,13 @@ export default function AppShell() {
                     <motion.div
                       whileTap={{ scale: 0.8, y: 1 }}
                       transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                      className="relative bottom-0 mt-1"
+                      className="relative bottom-0"
                     >
                       <Icon active={active} />
                     </motion.div>
 
                     <span
-                      className={`relative bottom-0 mt-1 text-[11px] font-extrabold tracking-wide transition-colors ${active ? "text-[#3B2C12]" : "text-[#8A7A55] opacity-80"}`}
+                      className={`relative bottom-0 text-md font-extrabold tracking-wide transition-colors ${active ? "text-[#3B2C12]" : "text-[#8A7A55] opacity-80"}`}
                     >
                       {label}
                     </span>

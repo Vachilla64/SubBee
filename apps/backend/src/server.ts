@@ -874,7 +874,7 @@ app.post('/api/card/unlock', async (req: Request, res: Response) => {
 
 // 11. Subscriptions Endpoint (CRUD)
 app.post('/api/subscriptions', async (req: Request, res: Response) => {
-  const { email, merchantId, merchantName, amountNaira, billingDay, remindersEnabled } = req.body;
+  const { email, merchantId, merchantName, amountNaira, billingDay, remindersEnabled, autoDetect } = req.body;
   if (!email || !merchantId || !merchantName || !amountNaira || !billingDay) {
     res.status(400).json({ error: 'Missing required subscription fields' });
     return;
@@ -884,11 +884,12 @@ app.post('/api/subscriptions', async (req: Request, res: Response) => {
 
   try {
     const user = await getUserByEmail(email);
+    const isAutoDetected = !!autoDetect;
 
     const insertRes = await db.query(
-      `INSERT INTO subscriptions (user_id, merchant_id, merchant_name, amount_kobo, billing_day, reminders_enabled, is_active) 
-       VALUES ($1, $2, $3, $4, $5, $6, TRUE) RETURNING id`,
-      [user.id, merchantId, merchantName, amountKobo, billingDay, remindersEnabled]
+      `INSERT INTO subscriptions (user_id, merchant_id, merchant_name, amount_kobo, billing_day, reminders_enabled, is_active, is_auto_detected, needs_confirmation) 
+       VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $8) RETURNING id`,
+      [user.id, merchantId, merchantName, amountKobo, billingDay, remindersEnabled, isAutoDetected, isAutoDetected]
     );
 
     res.json({ status: 'success', id: insertRes.rows[0].id });
@@ -934,7 +935,7 @@ app.delete('/api/subscriptions/:id', async (req: Request, res: Response) => {
 
 app.patch('/api/subscriptions/:id', async (req: Request, res: Response) => {
   const id = req.params.id;
-  const { isActive, amountNaira, billingDay, remindersEnabled } = req.body;
+  const { isActive, amountNaira, billingDay, remindersEnabled, needsConfirmation } = req.body;
 
   try {
     const updates: string[] = [];
@@ -956,6 +957,10 @@ app.patch('/api/subscriptions/:id', async (req: Request, res: Response) => {
     if (remindersEnabled !== undefined) {
       updates.push(`reminders_enabled = $${paramCount++}`);
       values.push(remindersEnabled);
+    }
+    if (needsConfirmation !== undefined) {
+      updates.push(`needs_confirmation = $${paramCount++}`);
+      values.push(needsConfirmation);
     }
 
     if (updates.length === 0) {
